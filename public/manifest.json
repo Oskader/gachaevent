@@ -1,0 +1,21 @@
+{
+  "name": "GachaDash",
+  "short_name": "GachaDash",
+  "description": "Tu Centro de Eventos Gacha",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0F23",
+  "theme_color": "#7C3AED",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

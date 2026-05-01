@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scrape-honkai",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/scrape-wuthering",
+      "schedule": "15 6 * * *"
+    },
+    {
+      "path": "/api/cron/scrape-zenless",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/cron/scrape-arknights",
+      "schedule": "45 6 * * *"
+    }
+  ]
+}

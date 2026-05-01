@@ -1,0 +1,109 @@
+import { scrapeHTML } from './browser'
+import { cleanHTML } from './html-cleaner'
+import { callGroqWithRetry } from './groq-extractor'
+import type { ExtractedEvent } from './groq-extractor'
+import { createClient } from '@supabase/supabase-js'
+import type { Database } from '@/lib/supabase/types'
+
+function getServiceRoleClient() {
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
+async function saveRawHTMLFallback(
+  html: string,
+  gameSlug: string
+): Promise<void> {
+  const supabase = getServiceRoleClient()
+  const fileName = `${gameSlug}-${Date.now()}.html`
+  await supabase.storage
+    .from('scraper-fallbacks')
+    .upload(fileName, Buffer.from(html), {
+      contentType: 'text/html',
+      upsert: false,
+    })
+}
+
+export async function runScraperForGame(
+  gameSlug: string,
+  sourceUrl: string
+): Promise<{ success: boolean; eventsUpserted: number; error?: string }> {
+  const supabase = getServiceRoleClient()
+
+  // 1. Get game_id from DB
+  const { data: game } = await supabase
+    .from('games')
+    .select('id')
+    .eq('slug', gameSlug as Database['public']['Enums']['game_slug'])
+    .single()
+
+  if (!game)
+    return {
+      success: false,
+      eventsUpserted: 0,
+      error: `Game not found: ${gameSlug}`,
+    }
+
+  let rawHTML: string
+
+  // 2. Scrape with Playwright
+  try {
+    rawHTML = await scrapeHTML(sourceUrl)
+  } catch (err) {
+    return {
+      success: false,
+      eventsUpserted: 0,
+      error: `Scraping failed: ${err}`,
+    }
+  }
+
+  // 3. Clean HTML
+  const cleanedHTML = cleanHTML(rawHTML)
+
+  // 4. Call Groq with retries
+  let events: ExtractedEvent[]
+  try {
+    events = await callGroqWithRetry(cleanedHTML, gameSlug)
+  } catch (err) {
+    // Fallback: save raw HTML to Storage
+    await saveRawHTMLFallback(rawHTML, gameSlug)
+    return {
+      success: false,
+      eventsUpserted: 0,
+      error: `Groq extraction failed after 3 retries: ${err}`,
+    }
+  }
+
+  if (events.length === 0) {
+    return { success: true, eventsUpserted: 0 }
+  }
+
+  // 5. Upsert into Supabase (avoid duplicates by title + game_id)
+  const rows = events.map((e) => ({
+    game_id: game.id,
+    title: e.title,
+    description: e.description,
+    start_date: e.start_date,
+    end_date: e.end_date,
+    rewards: e.rewards ? { items: e.rewards } : null,
+    source_url: sourceUrl,
+    is_active: true,
+  }))
+
+  const { error: upsertError } = await supabase.from('events').upsert(rows, {
+    onConflict: 'game_id,title',
+    ignoreDuplicates: true,
+  })
+
+  if (upsertError) {
+    return {
+      success: false,
+      eventsUpserted: 0,
+      error: upsertError.message,
+    }
+  }
+
+  return { success: true, eventsUpserted: rows.length }
+}

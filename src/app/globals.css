@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ============================
+   GachaDash — Design System
+   Palette: Gaming (Skill 01)
+   Style: Glassmorphism
+   ============================ */
+
+:root {
+  /* Core palette */
+  --color-bg-primary: #0F0F23;
+  --color-bg-surface: #1E1C35;
+  --color-bg-muted: #27273B;
+  --color-accent: #7C3AED;
+  --color-accent-secondary: #A78BFA;
+  --color-accent-rose: #F43F5E;
+  --color-text-primary: #E2E8F0;
+  --color-text-muted: #94A3B8;
+  --color-border: #4C1D95;
+  --color-destructive: #EF4444;
+  --color-ring: #7C3AED;
+
+  /* Per-game accent tokens */
+  --color-game-hsr: #F59E0B;
+  --color-game-wuwa: #06B6D4;
+  --color-game-zzz: #22C55E;
+  --color-game-ake: #EF4444;
+
+  /* Glassmorphism tokens */
+  --glass-blur: 15px;
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.36);
+}
+
+@theme inline {
+  --color-background: var(--color-bg-primary);
+  --color-foreground: var(--color-text-primary);
+  --color-surface: var(--color-bg-surface);
+  --color-muted: var(--color-bg-muted);
+  --color-accent: var(--color-accent);
+  --color-accent-secondary: var(--color-accent-secondary);
+  --color-accent-rose: var(--color-accent-rose);
+  --color-text-muted: var(--color-text-muted);
+  --color-border: var(--color-border);
+  --color-game-hsr: var(--color-game-hsr);
+  --color-game-wuwa: var(--color-game-wuwa);
+  --color-game-zzz: var(--color-game-zzz);
+  --color-game-ake: var(--color-game-ake);
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+
+/* Base resets */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100dvh;
+}
+
+/* Glassmorphism utility class */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.15);
+}
