@@ -3,7 +3,7 @@ import { runScraperForGame } from '@/lib/scraper/scraper-runner'
 
 const GAME_SLUG = 'zenless-zone-zero'
 // Using MediaWiki API to avoid 403 bot blocks on hoyoverse.com
-const SOURCE_URL = 'https://zenless-zone-zero.fandom.com/api.php?action=parse&page=Events&format=json'
+const SOURCE_URL = 'https://zenless-zone-zero.fandom.com/api.php?action=parse&page=Event&format=json'
 
 export const maxDuration = 60
 
