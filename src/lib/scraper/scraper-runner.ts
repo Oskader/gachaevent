@@ -66,12 +66,29 @@ export async function runScraperForGame(
     }
   }
 
-  if (events.length === 0) {
+  // Filter events missing required end_date (NOT NULL in DB)
+  const validEvents = events.filter((e) => {
+    if (!e.end_date || e.end_date === 'null') {
+      console.warn(`[${gameSlug}] Skipping event "${e.title}" — no end_date`)
+      return false
+    }
+    return true
+  })
+
+  if (validEvents.length === 0) {
     return { success: true, eventsUpserted: 0 }
   }
 
+  // Deduplicate within the same batch by title (Groq may return duplicates)
+  const seen = new Set<string>()
+  const dedupedEvents = validEvents.filter((e) => {
+    if (seen.has(e.title)) return false
+    seen.add(e.title)
+    return true
+  })
+
   // 4. Upsert into Supabase (avoid duplicates by title + game_id)
-  const rows = events.map((e) => ({
+  const rows = dedupedEvents.map((e) => ({
     game_id: game.id,
     title: e.title,
     description: e.description,
