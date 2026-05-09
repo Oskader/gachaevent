@@ -1,9 +1,10 @@
-import { scrapeHTML } from './browser'
-import { cleanHTML } from './html-cleaner'
+import { fetchMediaWiki, fetchStaticPage } from './browser'
 import { callGroqWithRetry } from './groq-extractor'
 import type { ExtractedEvent } from './groq-extractor'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/types'
+
+export type FetchStrategy = 'mediawiki' | 'static'
 
 function getServiceRoleClient() {
   return createClient<Database>(
@@ -12,23 +13,10 @@ function getServiceRoleClient() {
   )
 }
 
-async function saveRawHTMLFallback(
-  html: string,
-  gameSlug: string
-): Promise<void> {
-  const supabase = getServiceRoleClient()
-  const fileName = `${gameSlug}-${Date.now()}.html`
-  await supabase.storage
-    .from('scraper-fallbacks')
-    .upload(fileName, Buffer.from(html), {
-      contentType: 'text/html',
-      upsert: false,
-    })
-}
-
 export async function runScraperForGame(
   gameSlug: string,
-  sourceUrl: string
+  sourceUrl: string,
+  strategy: FetchStrategy = 'mediawiki'
 ): Promise<{ success: boolean; eventsUpserted: number; error?: string }> {
   const supabase = getServiceRoleClient()
 
@@ -46,29 +34,31 @@ export async function runScraperForGame(
       error: `Game not found: ${gameSlug}`,
     }
 
-  let rawHTML: string
-
-  // 2. Scrape with Playwright
+  // 2. Fetch content using the appropriate strategy
+  let rawText: string
   try {
-    rawHTML = await scrapeHTML(sourceUrl)
+    const fetched =
+      strategy === 'mediawiki'
+        ? await fetchMediaWiki(sourceUrl)
+        : await fetchStaticPage(sourceUrl)
+    rawText = fetched.rawText
   } catch (err) {
     return {
       success: false,
       eventsUpserted: 0,
-      error: `Scraping failed: ${err}`,
+      error: `Fetching failed: ${err}`,
     }
   }
 
-  // 3. Clean HTML
-  const cleanedHTML = cleanHTML(rawHTML)
+  if (!rawText) {
+    return { success: false, eventsUpserted: 0, error: 'Empty content fetched' }
+  }
 
-  // 4. Call Groq with retries
+  // 3. Call Groq with retries
   let events: ExtractedEvent[]
   try {
-    events = await callGroqWithRetry(cleanedHTML, gameSlug)
+    events = await callGroqWithRetry(rawText, gameSlug)
   } catch (err) {
-    // Fallback: save raw HTML to Storage
-    await saveRawHTMLFallback(rawHTML, gameSlug)
     return {
       success: false,
       eventsUpserted: 0,
@@ -80,7 +70,7 @@ export async function runScraperForGame(
     return { success: true, eventsUpserted: 0 }
   }
 
-  // 5. Upsert into Supabase (avoid duplicates by title + game_id)
+  // 4. Upsert into Supabase (avoid duplicates by title + game_id)
   const rows = events.map((e) => ({
     game_id: game.id,
     title: e.title,
@@ -94,7 +84,7 @@ export async function runScraperForGame(
 
   const { error: upsertError } = await supabase.from('events').upsert(rows, {
     onConflict: 'game_id,title',
-    ignoreDuplicates: true,
+    ignoreDuplicates: false,
   })
 
   if (upsertError) {

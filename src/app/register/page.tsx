@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { LoginForm } from './LoginForm'
+import { RegisterForm } from './RegisterForm'
 
-export default async function LoginPage() {
+export default async function RegisterPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -20,11 +20,11 @@ export default async function LoginPage() {
           <div className="w-12 h-12 mx-auto rounded-xl bg-[#7C3AED] flex items-center justify-center text-white text-2xl font-black mb-4 shadow-[0_0_15px_rgba(124,58,237,0.5)]">
             G
           </div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Bienvenido a GachaDash</h1>
-          <p className="text-sm text-white/50 mt-1">Sincroniza tus eventos y checklists</p>
+          <h1 className="text-xl font-bold text-white tracking-tight">Crea tu cuenta</h1>
+          <p className="text-sm text-white/50 mt-1">Únete a GachaDash</p>
         </div>
 
-        <LoginForm />
+        <RegisterForm />
       </div>
     </main>
   )

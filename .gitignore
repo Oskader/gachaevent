@@ -36,6 +36,11 @@ yarn-error.log*
 # vercel
 .vercel
 
+# scratch / one-off test scripts (may contain hardcoded secrets)
+scratch-*.mjs
+upload-env.js
+test_supabase_auth.mjs
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { runScraperForGame } from '@/lib/scraper/scraper-runner'
 
 const GAME_SLUG = 'zenless-zone-zero'
-const SOURCE_URL = 'https://zenless.hoyoverse.com/en-us/news'
+// Using MediaWiki API to avoid 403 bot blocks on hoyoverse.com
+const SOURCE_URL = 'https://zenless-zone-zero.fandom.com/api.php?action=parse&page=Events&format=json'
 
-export const maxDuration = 10
+export const maxDuration = 60
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const result = await runScraperForGame(GAME_SLUG, SOURCE_URL)
+  const result = await runScraperForGame(GAME_SLUG, SOURCE_URL, 'mediawiki')
 
   return NextResponse.json(result, {
     status: result.success ? 200 : 500,

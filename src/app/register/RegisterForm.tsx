@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
-export function LoginForm() {
+export function RegisterForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
   const router = useRouter()
   const supabase = createClient()
@@ -19,23 +21,30 @@ export function LoginForm() {
     e.preventDefault()
     setLoading(true)
     
-    const { error } = await supabase.auth.signInWithPassword({
+    // Validación de registro
+    if (password !== confirmPassword) {
+      toast.error('Las contraseñas no coinciden')
+      setLoading(false)
+      return
+    }
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     })
 
     if (error) {
-      if (error.message.includes('Email not confirmed')) {
-        toast.error('Aún no has confirmado tu correo. Revisa tu bandeja de entrada o desactiva "Confirm email" en Supabase.')
-      } else {
-        toast.error('Error al iniciar sesión: Verifica tus credenciales.')
-      }
-      console.error("Login Error:", error.message)
+      toast.error(error.message)
       setLoading(false)
     } else {
-      toast.success('Sesión iniciada correctamente')
-      router.push('/dashboard')
-      router.refresh()
+      if (data?.session) {
+        toast.success('Cuenta creada exitosamente')
+        router.push('/dashboard')
+        router.refresh()
+      } else {
+        toast.error('Este correo ya está registrado o requiere confirmación.')
+        setLoading(false)
+      }
     }
   }
 
@@ -92,12 +101,40 @@ export function LoginForm() {
           </div>
         </div>
 
+        <div className="relative">
+          <label className="block text-xs font-medium text-white/70 mb-1" htmlFor="confirmPassword">Confirmar Contraseña</label>
+          <div className="relative">
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="w-full bg-white/5 border border-white/10 rounded-lg pl-3 pr-10 py-2 text-sm text-white focus:outline-none focus:border-[#7C3AED] focus:bg-white/10 transition-colors"
+              placeholder="••••••••"
+              minLength={6}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
+              aria-label={showConfirmPassword ? "Ocultar contraseña" : "Ver contraseña"}
+            >
+              {showConfirmPassword ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              )}
+            </button>
+          </div>
+        </div>
+
         <button
           type="submit"
           disabled={loading}
           className="w-full bg-[#7C3AED] hover:bg-[#6D28D9] text-white font-medium py-2 rounded-lg transition-colors mt-2 text-sm"
         >
-          {loading ? 'Procesando...' : 'Iniciar Sesión'}
+          {loading ? 'Procesando...' : 'Crear Cuenta'}
         </button>
       </form>
 
@@ -127,7 +164,7 @@ export function LoginForm() {
 
       <div className="text-center mt-2">
         <p className="text-xs text-white/50">
-          ¿No tienes una cuenta? <Link href="/register" className="text-[#D8B4FE] hover:text-white transition-colors">Regístrate</Link>
+          ¿Ya tienes cuenta? <Link href="/login" className="text-[#D8B4FE] hover:text-white transition-colors">Inicia sesión</Link>
         </p>
       </div>
     </div>

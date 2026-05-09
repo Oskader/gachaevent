@@ -36,6 +36,7 @@ export async function ChecklistSection({
       initialProgress={initialProgress}
       gameId={gameId}
       accentColor={accentColor}
+      userId={session?.user?.id ?? null}
     />
   )
 }
