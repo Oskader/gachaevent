@@ -3,7 +3,7 @@ import { runScraperForGame } from '@/lib/scraper/scraper-runner'
 
 const GAME_SLUG = 'arknights-endfield'
 // Using Arknights wiki.gg MediaWiki API
-const SOURCE_URL = 'https://arknights.wiki.gg/api.php?action=parse&page=Events&format=json'
+const SOURCE_URL = 'https://arknights.wiki.gg/api.php?action=parse&page=Event&format=json'
 
 export const maxDuration = 60
 
