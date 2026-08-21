@@ -6,7 +6,10 @@
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "status": "node scripts/status.mjs",
+    "scrape": "node scripts/run-scrapers.mjs",
+    "seed:checklist": "node scripts/seed-checklist.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
