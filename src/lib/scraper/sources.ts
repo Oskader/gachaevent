@@ -1,0 +1,75 @@
+/**
+ * De dónde sale la lista de eventos de cada juego.
+ *
+ * Comparativa de fuentes hecha en vivo el 2026-08-21:
+ *
+ *   Tablón oficial HoYoverse — fechas exactas, texto del estudio, banner.
+ *     Solo HSR y ZZZ. Mezcla eventos con notas de parche, y su ventana es la
+ *     del anuncio, no la del evento. Sirve para enriquecer, no para listar.
+ *   API de Kuro (Wuthering Waves) — el endpoint del launcher solo publica
+ *     descargas; el foro (KuroBBS) responde 102 sin credenciales.
+ *   Hypergryph (Endfield) — la web de noticias es una SPA sin API pública.
+ *   Cargo / Semantic MediaWiki — ninguna de las cuatro wikis lo tiene
+ *     instalado, así que no hay consulta estructurada.
+ *
+ * Conclusión: las wikis son la única fuente que cubre los cuatro juegos, y
+ * sus páginas de eventos ya vienen en tablas o tarjetas. Se parsean tal cual,
+ * sin LLM de por medio.
+ */
+
+export type ParserKind = 'fandom-table' | 'endfield-cards'
+
+export interface GameSource {
+  gameSlug: string
+  parser: ParserKind
+  /** URL de la API MediaWiki de la página con la lista de eventos. */
+  sourceUrl: string
+  /**
+   * Secciones a pedir por separado (solo endfield-cards: su lista no es una
+   * tabla, así que se piden las secciones Ongoing y Upcoming por índice).
+   */
+  sections?: { index: number; label: string }[]
+  /** Página legible por humanos, para guardar como referencia en la fila. */
+  humanUrl: string
+}
+
+export const SOURCES: Record<string, GameSource> = {
+  'honkai-star-rail': {
+    gameSlug: 'honkai-star-rail',
+    parser: 'fandom-table',
+    // OJO: aquí la página es "Events" en plural. En las otras dos wikis de
+    // Fandom es singular. No unificar sin comprobarlo contra la API.
+    sourceUrl:
+      'https://honkai-star-rail.fandom.com/api.php?action=parse&page=Events&format=json',
+    humanUrl: 'https://honkai-star-rail.fandom.com/wiki/Events',
+  },
+
+  'zenless-zone-zero': {
+    gameSlug: 'zenless-zone-zero',
+    parser: 'fandom-table',
+    sourceUrl:
+      'https://zenless-zone-zero.fandom.com/api.php?action=parse&page=Event&format=json',
+    humanUrl: 'https://zenless-zone-zero.fandom.com/wiki/Event',
+  },
+
+  'wuthering-waves': {
+    gameSlug: 'wuthering-waves',
+    parser: 'fandom-table',
+    sourceUrl:
+      'https://wutheringwaves.fandom.com/api.php?action=parse&page=Event&format=json',
+    humanUrl: 'https://wutheringwaves.fandom.com/wiki/Event',
+  },
+
+  'arknights-endfield': {
+    gameSlug: 'arknights-endfield',
+    parser: 'endfield-cards',
+    // endfield.wiki.gg, NO arknights.wiki.gg: ese segundo es el Arknights
+    // original de tower defense, un juego distinto.
+    sourceUrl: 'https://endfield.wiki.gg/api.php?action=parse&page=Event&format=json',
+    sections: [
+      { index: 3, label: 'Current' },
+      { index: 4, label: 'Upcoming' },
+    ],
+    humanUrl: 'https://endfield.wiki.gg/wiki/Event',
+  },
+}
