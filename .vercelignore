@@ -1,0 +1,14 @@
+# Vercel excluye de serie .env.local, .git y node_modules, pero NO lee el
+# contenido de .gitignore: todo lo demás del árbol se sube al despliegue.
+# Estos ficheros están gitignorados porque llevan credenciales o son pruebas
+# manuales, así que hay que repetirlos aquí.
+
+# Tokens de Vercel y Supabase en texto plano.
+upload-env.js
+
+# Sondas manuales, no son un suite de tests.
+scratch-*.mjs
+test_supabase_auth.mjs
+
+# Guía de configuración; no hace falta en el build.
+GUIA_OAUTH_GOOGLE.md
