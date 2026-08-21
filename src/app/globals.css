@@ -1,81 +1,216 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-/* ============================
-   GachaDash — Design System
-   Palette: Gaming (Skill 01)
-   Style: Glassmorphism
-   ============================ */
+@custom-variant dark (&:is(.dark *));
+
+/* =============================================================
+   GachaDash — Sistema de diseño "Mecha"
+
+   Tesis: en un gacha el dato que duele no es el nombre del evento,
+   es cuánto queda. Todo el sistema pone el tiempo por delante.
+
+   Reglas duras:
+   - El color saturado codifica URGENCIA y nada más. Un evento que
+     no corre prisa se dibuja en gris, a propósito.
+   - El color del juego es identidad, no relleno: franja de 3px.
+   - Cifras siempre monoespaciadas y tabulares, para que la cuenta
+     atrás no baile al cambiar de dígito.
+   - Bordes duros (2px de radio) y hairlines. Sin blur, sin glass.
+   ============================================================= */
 
 :root {
-  /* Core palette */
-  --color-bg-primary: #0F0F23;
-  --color-bg-surface: #1E1C35;
-  --color-bg-muted: #27273B;
-  --color-accent: #7C3AED;
-  --color-accent-secondary: #A78BFA;
-  --color-accent-rose: #F43F5E;
-  --color-text-primary: #E2E8F0;
-  --color-text-muted: #94A3B8;
-  --color-border: #4C1D95;
-  --color-destructive: #EF4444;
-  --color-ring: #7C3AED;
+  /* --- Superficie: azul-negro, no negro puro --- */
+  --ink: #0a0c11;
+  --panel: #111620;
+  --panel-raised: #161c28;
+  --line: #222836;
+  --line-strong: #313a4d;
 
-  /* Per-game accent tokens */
-  --color-game-hsr: #F59E0B;
-  --color-game-wuwa: #06B6D4;
-  --color-game-zzz: #22C55E;
-  --color-game-ake: #EF4444;
+  --text: #e7eaf0;
+  --text-dim: #78839a;
+  --text-faint: #4d5566;
 
-  /* Glassmorphism tokens */
-  --glass-blur: 15px;
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.12);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.36);
+  /* --- Rampa de urgencia: secuencial, con significado --- */
+  --urgency-none: #78839a; /* > 7 días — todavía no es tu problema */
+  --urgency-low: #d9a441; /* 2–7 días */
+  --urgency-mid: #e8743b; /* < 48 h */
+  --urgency-high: #e14b4b; /* < 12 h */
+
+  --ok: #4b9e6a;
+
+  /* --- Acentos por juego (fallback; la BD manda) --- */
+  --game-hsr: #f0b429;
+  --game-wuwa: #35c4e0;
+  --game-zzz: #57cc63;
+  --game-ake: #e2603f;
+
+  /* --- Tokens shadcn, en oscuro directamente --- */
+  --radius: 0.125rem;
+
+  --background: var(--ink);
+  --foreground: var(--text);
+  --card: var(--panel);
+  --card-foreground: var(--text);
+  --popover: var(--panel-raised);
+  --popover-foreground: var(--text);
+  --primary: var(--text);
+  --primary-foreground: var(--ink);
+  --secondary: var(--panel-raised);
+  --secondary-foreground: var(--text);
+  --muted: var(--panel-raised);
+  --muted-foreground: var(--text-dim);
+  --accent: var(--panel-raised);
+  --accent-foreground: var(--text);
+  --destructive: var(--urgency-high);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--text-dim);
+
+  --chart-1: var(--urgency-high);
+  --chart-2: var(--urgency-mid);
+  --chart-3: var(--urgency-low);
+  --chart-4: var(--urgency-none);
+  --chart-5: var(--ok);
+
+  --sidebar: var(--panel);
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--text);
+  --sidebar-primary-foreground: var(--ink);
+  --sidebar-accent: var(--panel-raised);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--text-dim);
+}
+
+/* La app es oscura a propósito: .dark existe solo para que los
+   componentes de shadcn que la buscan encuentren lo mismo. */
+.dark {
+  color-scheme: dark;
+}
+
+/* Fuentes en @theme (no `inline`): `inline` resuelve en tiempo de
+   parseo y se comería las variables que next/font inyecta en runtime. */
+@theme {
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-data), ui-monospace, "SFMono-Regular", monospace;
 }
 
 @theme inline {
-  --color-background: var(--color-bg-primary);
-  --color-foreground: var(--color-text-primary);
-  --color-surface: var(--color-bg-surface);
-  --color-muted: var(--color-bg-muted);
-  --color-accent: var(--color-accent);
-  --color-accent-secondary: var(--color-accent-secondary);
-  --color-accent-rose: var(--color-accent-rose);
-  --color-text-muted: var(--color-text-muted);
-  --color-border: var(--color-border);
-  --color-game-hsr: var(--color-game-hsr);
-  --color-game-wuwa: var(--color-game-wuwa);
-  --color-game-zzz: var(--color-game-zzz);
-  --color-game-ake: var(--color-game-ake);
-  --font-heading: 'Space Grotesk', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Semánticos propios, disponibles como utilidades Tailwind */
+  --color-panel: var(--panel);
+  --color-panel-raised: var(--panel-raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-dim: var(--text-dim);
+  --color-urgency-none: var(--urgency-none);
+  --color-urgency-low: var(--urgency-low);
+  --color-urgency-mid: var(--urgency-mid);
+  --color-urgency-high: var(--urgency-high);
+  --color-ok: var(--ok);
+
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
 }
 
-/* Base resets */
-html {
-  scroll-behavior: smooth;
+@layer base {
+  * {
+    @apply border-border outline-ring/40;
+  }
+
+  html {
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    min-height: 100dvh;
+    /* La app vive dentro de un PWA: sin rebote de scroll horizontal. */
+    overflow-x: hidden;
+  }
+
+  /* Cifras que no bailan al cambiar de dígito. */
+  .tabular,
+  time,
+  [data-numeric] {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
 }
 
-body {
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  font-family: 'DM Sans', sans-serif;
-  min-height: 100dvh;
+@layer components {
+  /* Eyebrow: etiqueta de sección. Mayúsculas, monoespaciada, con la
+     regla que la acompaña hasta el borde. Estructura, no adorno. */
+  .eyebrow {
+    @apply flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.18em] text-dim;
+    font-family: var(--font-mono);
+  }
+  .eyebrow::after {
+    content: "";
+    @apply h-px flex-1 bg-line;
+  }
+
+  /* La mecha: barra de agotamiento proporcional a la ventana del
+     propio evento. Es la firma visual de la app. */
+  .fuse {
+    @apply relative h-[3px] w-full overflow-hidden bg-line;
+  }
+  .fuse-burn {
+    @apply absolute inset-y-0 left-0;
+    transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
 }
 
-/* Glassmorphism utility class */
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: var(--glass-border);
-  border-radius: 16px;
-  box-shadow: var(--glass-shadow);
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-
-.glass-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.15);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

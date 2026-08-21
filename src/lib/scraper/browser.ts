@@ -1,21 +1,26 @@
-import * as cheerio from 'cheerio'
-
-export interface FetchedContent {
-  rawText: string
+export interface FetchedPage {
+  /** HTML renderizado de la página, con su estructura intacta. */
+  html: string
   sourceUrl: string
 }
 
 /**
- * Fetches content from a MediaWiki API endpoint (Fandom, wiki.gg, etc.)
- * using the ?action=parse route which avoids bot-detection 403s.
+ * Descarga una página vía la API `action=parse` de MediaWiki (Fandom, wiki.gg).
+ *
+ * Este endpoint existe para consumo programático: no aplica el bloqueo por bot
+ * que devuelve 403 en las páginas web normales y en hoyoverse.com, y entrega
+ * el HTML ya renderizado.
+ *
+ * Devuelve HTML, no texto. Aplastarlo a texto plano —como hacía la versión
+ * anterior— destruye las tablas que son justamente el dato que se quiere.
  */
-export async function fetchMediaWiki(url: string): Promise<FetchedContent> {
+export async function fetchMediaWiki(url: string): Promise<FetchedPage> {
   const res = await fetch(url, {
     headers: {
       'User-Agent': 'GachaDashBot/1.0 (https://gachadash.vercel.app)',
-      'Accept': 'application/json',
+      Accept: 'application/json',
     },
-    next: { revalidate: 0 },
+    cache: 'no-store',
   })
 
   if (!res.ok) {
@@ -23,37 +28,26 @@ export async function fetchMediaWiki(url: string): Promise<FetchedContent> {
   }
 
   const json = await res.json()
-  const html = json?.parse?.text?.['*'] ?? ''
 
-  const $ = cheerio.load(html)
-  $('script, style, table.navbox, .mw-editsection, .toc, .noprint, .mw-empty-elt').remove()
-  const rawText = $('body').text().replace(/\s+/g, ' ').trim()
-
-  return { rawText: rawText.substring(0, 12000), sourceUrl: url }
-}
-
-/**
- * Fetches content from a regular HTML page using plain fetch + Cheerio.
- * Works for sites that don't need JS rendering.
- */
-export async function fetchStaticPage(url: string): Promise<FetchedContent> {
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; GachaDashBot/1.0)',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Accept': 'text/html,application/xhtml+xml',
-    },
-    next: { revalidate: 0 },
-  })
-
-  if (!res.ok) {
-    throw new Error(`Static fetch failed: ${res.status} ${res.statusText}`)
+  // La API responde 200 con el error dentro del cuerpo.
+  if (json?.error) {
+    throw new Error(`MediaWiki API error: ${json.error.code} — ${json.error.info}`)
   }
 
-  const html = await res.text()
-  const $ = cheerio.load(html)
-  $('script, style, nav, footer, header, .ads, .cookie-banner').remove()
-  const rawText = $('main, article, .content, body').first().text().replace(/\s+/g, ' ').trim()
+  const html: string = json?.parse?.text?.['*'] ?? ''
 
-  return { rawText: rawText.substring(0, 12000), sourceUrl: url }
+  // `action=parse` NO sigue redirecciones: devuelve el stub de redirección con
+  // HTTP 200. Sin este guard, apuntar a un nombre de página equivocado parece
+  // "no hay eventos" en vez de un error.
+  if (/class="redirectText"/i.test(html)) {
+    throw new Error(
+      `MediaWiki page "${json?.parse?.title}" is a redirect; apunta el scraper a la página real`
+    )
+  }
+
+  if (!html) {
+    throw new Error(`MediaWiki returned empty content for ${url}`)
+  }
+
+  return { html, sourceUrl: url }
 }

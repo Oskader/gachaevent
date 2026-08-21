@@ -1,115 +1,139 @@
 'use client'
 
 import { useOptimistic, useTransition } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { ChecklistItem } from './ChecklistItem'
+import { toast } from 'sonner'
+import { Checkbox } from '@/components/ui/checkbox'
+import { toggleChecklistItem } from '../actions'
 import type { Database } from '@/lib/supabase/types'
 
 type ChecklistItemRow = Database['public']['Tables']['checklist_items']['Row']
-type ProgressRow = Database['public']['Tables']['user_checklist_progress']['Row']
+
+/**
+ * El enum `checklist_category` vive en Postgres en inglés, pero la interfaz
+ * está en español. Se traduce al pintar en vez de tocar el enum, que exigiría
+ * migración y regenerar tipos.
+ */
+const CATEGORY_LABELS: Record<string, string> = {
+  other: 'rutina',
+  character: 'personaje',
+  weapon: 'arma',
+  artifact: 'reliquia',
+  story: 'historia',
+  achievement: 'reto',
+}
 
 interface Props {
   items: ChecklistItemRow[]
-  initialProgress: ProgressRow[]
-  gameId: string
+  /** IDs ya completados, calculados en el servidor. */
+  completedIds: string[]
+  gameSlug: string
   accentColor: string
-  userId: string | null
+  isSignedIn: boolean
 }
 
 export function ChecklistClient({
   items,
-  initialProgress,
-  gameId,
+  completedIds,
+  gameSlug,
   accentColor,
-  userId,
+  isSignedIn,
 }: Props) {
-  const supabase = createClient()
   const [, startTransition] = useTransition()
 
-  // Set de IDs completados — fuente de verdad local
-  const completedIds = new Set(
-    initialProgress
-      .filter(p => p.completed)
-      .map(p => p.checklist_item_id)
-  )
-
-  const [optimisticCompleted, updateOptimistic] = useOptimistic(
+  const [optimistic, addOptimistic] = useOptimistic(
     completedIds,
-    (current: Set<string>, itemId: string) => {
-      const next = new Set(current)
-      next.has(itemId) ? next.delete(itemId) : next.add(itemId)
-      return next
-    }
+    (current: string[], itemId: string) =>
+      current.includes(itemId)
+        ? current.filter((id) => id !== itemId)
+        : [...current, itemId]
   )
 
-  async function toggleItem(itemId: string) {
-    if (!userId) return // AuthGate debe prevenir esto
+  const completedSet = new Set(optimistic)
 
-    const isCompleted = optimisticCompleted.has(itemId)
+  function toggle(itemId: string) {
+    if (!isSignedIn) return
+
+    const willBeCompleted = !completedSet.has(itemId)
 
     startTransition(async () => {
-      // 1. Update optimista: instantáneo
-      updateOptimistic(itemId)
-
-      // 2. Sincronización en background con Supabase
-      if (isCompleted) {
-        await supabase
-          .from('user_checklist_progress')
-          .update({ completed: false, completed_at: null })
-          .eq('user_id', userId)
-          .eq('checklist_item_id', itemId)
-      } else {
-        await supabase
-          .from('user_checklist_progress')
-          .upsert({
-            user_id: userId,
-            checklist_item_id: itemId,
-            completed: true,
-            completed_at: new Date().toISOString(),
-          }, { onConflict: 'user_id,checklist_item_id' })
-      }
+      addOptimistic(itemId)
+      const result = await toggleChecklistItem(itemId, willBeCompleted, gameSlug)
+      // El error ya no se descarta: si RLS rechaza o cae la red, el usuario
+      // se entera y el estado optimista se deshace al revalidar.
+      if (!result.ok) toast.error(result.error ?? 'No se pudo guardar')
     })
   }
 
-  const completedCount = optimisticCompleted.size
-  const totalCount = items.length
-  const progressPercent = totalCount > 0
-    ? Math.round((completedCount / totalCount) * 100)
-    : 0
+  const done = completedSet.size
+  const total = items.length
+  const percent = total > 0 ? Math.round((done / total) * 100) : 0
 
   return (
-    <section aria-label="Checklist endgame">
-      {/* Barra de progreso */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-[var(--color-text-primary)]">
-          Progreso endgame
-        </span>
-        <span className="text-sm text-[var(--color-text-muted)]">
-          {completedCount}/{totalCount}
+    <section aria-labelledby="checklist-heading">
+      <div className="mb-4 flex items-baseline justify-between gap-4">
+        <h2 id="checklist-heading" className="eyebrow flex-1">
+          Endgame
+        </h2>
+        <span className="tabular text-sm text-dim">
+          <span style={{ color: done > 0 ? accentColor : undefined }}>{done}</span>
+          <span className="text-[var(--text-faint)]">/{total}</span>
         </span>
       </div>
-      <div className="w-full h-2 bg-white/10 rounded-full mb-4 overflow-hidden">
+
+      {/* Medidor de progreso: mismo lenguaje visual que la mecha, pero
+          aquí el color es el del juego porque mide logro, no urgencia. */}
+      <div
+        className="mb-5 h-[3px] w-full bg-line"
+        role="progressbar"
+        aria-valuenow={percent}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Progreso endgame: ${done} de ${total}`}
+      >
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{
-            width: `${progressPercent}%`,
-            backgroundColor: accentColor,
-          }}
+          className="h-full transition-[width] duration-500 ease-out"
+          style={{ width: `${percent}%`, backgroundColor: accentColor }}
         />
       </div>
 
-      {/* Lista de items */}
-      <ul className="space-y-2">
-        {items.map(item => (
-          <ChecklistItem
-            key={item.id}
-            item={item}
-            completed={optimisticCompleted.has(item.id)}
-            accentColor={accentColor}
-            onToggle={() => toggleItem(item.id)}
-            disabled={!userId}
-          />
-        ))}
+      <ul className="divide-y divide-line border-y border-line">
+        {items.map((item) => {
+          const isDone = completedSet.has(item.id)
+          return (
+            <li key={item.id}>
+              <label
+                className={`flex cursor-pointer items-center gap-3 py-3 transition-colors ${
+                  isSignedIn ? 'hover:bg-panel' : 'cursor-not-allowed'
+                }`}
+              >
+                <Checkbox
+                  checked={isDone}
+                  onCheckedChange={() => toggle(item.id)}
+                  disabled={!isSignedIn}
+                  className="size-[18px] rounded-[2px] border-line-strong data-[state=checked]:border-transparent"
+                  style={
+                    isDone
+                      ? { backgroundColor: accentColor, color: 'var(--ink)' }
+                      : undefined
+                  }
+                />
+                <span
+                  className={`flex-1 text-sm leading-snug transition-colors ${
+                    isDone ? 'text-[var(--text-faint)] line-through' : 'text-foreground'
+                  }`}
+                >
+                  {item.title}
+                </span>
+                <span
+                  className="tabular shrink-0 text-[10px] uppercase tracking-wider text-dim"
+                  aria-hidden="true"
+                >
+                  {CATEGORY_LABELS[item.category] ?? item.category}
+                </span>
+              </label>
+            </li>
+          )
+        })}
       </ul>
     </section>
   )
