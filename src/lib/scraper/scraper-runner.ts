@@ -106,6 +106,15 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
 
   const previous = new Map((existing ?? []).map((row) => [row.title, row]))
 
+  /**
+   * El pipeline anterior guardaba como descripción cosas que no lo eran:
+   * "Collaboration", "Web", el contenido de la columna Type. Al arrastrarlas
+   * hacia delante ensuciarían las tarjetas, así que solo se conserva lo que
+   * parece una frase.
+   */
+  const usableDescription = (value: string | null | undefined) =>
+    value && value.trim().length >= 30 ? value : null
+
   const rows = deduped.map((event) => {
     const extra = enrichment.get(dedupKey(event.title))
     if (extra?.description) enriched++
@@ -114,7 +123,7 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
     return {
       game_id: game.id,
       title: event.title,
-      description: extra?.description ?? prev?.description ?? null,
+      description: extra?.description ?? usableDescription(prev?.description),
       // El tablón oficial da la hora exacta; la wiki solo el día.
       start_date: extra?.start_date ?? event.start_date,
       end_date: extra?.end_date ?? event.end_date,
