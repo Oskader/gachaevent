@@ -11,13 +11,21 @@ export interface ExtractedEvent {
   source_url: string
 }
 
-const SYSTEM_PROMPT = `You are a gacha videogame data extractor.
+/**
+ * Se construye por llamada, no a nivel de módulo: en una lambda caliente la
+ * fecha quedaría congelada al primer arranque y el modelo resolvería mal
+ * todas las fechas relativas ("empieza la semana que viene").
+ */
+function buildSystemPrompt() {
+  return `You are a gacha videogame data extractor.
 You analyze text from wiki or news pages and return ONLY valid JSON.
 No extra text, no markdown, no explanations.
 ALWAYS respond with this exact format:
 {"events": [{"title": string, "description": string|null, "start_date": "YYYY-MM-DDTHH:mm:ssZ", "end_date": "YYYY-MM-DDTHH:mm:ssZ", "rewards": string[]|null}]}
+Both start_date and end_date are REQUIRED. Omit any event whose start or end date you cannot determine.
 If you cannot find events with clear dates, return: {"events": []}
 Current date is: ${new Date().toISOString()}`
+}
 
 async function callGroqWithRetry(
   text: string,
@@ -28,7 +36,7 @@ async function callGroqWithRetry(
     const response = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: buildSystemPrompt() },
         { role: 'user', content: `Game: ${gameSlug}\n\nContent:\n${text}` },
       ],
       temperature: 0.1,
@@ -38,7 +46,7 @@ async function callGroqWithRetry(
 
     const content = response.choices[0]?.message?.content ?? '{}'
     const parsed = JSON.parse(content)
-    return parsed.events ?? []
+    return Array.isArray(parsed.events) ? parsed.events : []
   } catch (error) {
     if (attempt >= 3) throw error
     // Exponential backoff: 500ms, 1000ms

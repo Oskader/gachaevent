@@ -1,23 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { runScraperForGame } from '@/lib/scraper/scraper-runner'
-
-const GAME_SLUG = 'honkai-star-rail'
-// Using MediaWiki API to avoid 403 bot blocks on hoyoverse.com
-const SOURCE_URL = 'https://honkai-star-rail.fandom.com/api.php?action=parse&page=Events&format=json'
+import { createCronScraper } from '@/lib/scraper/cron-route'
 
 export const maxDuration = 60
 
-export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  const cronSecret = process.env.CRON_SECRET
-
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const result = await runScraperForGame(GAME_SLUG, SOURCE_URL, 'mediawiki')
-
-  return NextResponse.json(result, {
-    status: result.success ? 200 : 500,
-  })
-}
+// La página de esta wiki es "Events" en plural; en las otras tres es singular.
+// Verificado contra la API en vivo — no unificar sin comprobar.
+export const GET = createCronScraper({
+  gameSlug: 'honkai-star-rail',
+  sourceUrl:
+    'https://honkai-star-rail.fandom.com/api.php?action=parse&page=Events&format=json',
+})

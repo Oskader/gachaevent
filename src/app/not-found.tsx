@@ -2,20 +2,23 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <main className="flex-1 flex flex-col items-center justify-center p-4">
-      <div className="glass-card p-8 rounded-2xl border border-white/10 text-center max-w-md w-full relative overflow-hidden">
-        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#7C3AED] to-transparent opacity-50" />
-        <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20 mb-2">404</h1>
-        <h2 className="text-xl font-bold text-white mb-2">Página no encontrada</h2>
-        <p className="text-sm text-white/60 mb-8">El evento o sección que buscas ha terminado o no existe.</p>
-        
-        <Link
-          href="/"
-          className="inline-block px-6 py-3 bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          Explorar Juegos
-        </Link>
-      </div>
+    <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-6">
+      <p className="tabular mb-4 text-[10px] uppercase tracking-[0.24em] text-dim">
+        Error 404
+      </p>
+      <h1 className="mb-3 text-2xl font-bold tracking-tight text-foreground">
+        Esto no existe
+      </h1>
+      <p className="mb-8 text-sm leading-relaxed text-dim">
+        La página que buscas no está aquí. Si era un evento, puede que ya
+        haya terminado.
+      </p>
+      <Link
+        href="/hoy"
+        className="tabular self-start border-b border-foreground pb-1 text-xs uppercase tracking-[0.14em] text-foreground transition-colors hover:border-[var(--urgency-low)] hover:text-[var(--urgency-low)]"
+      >
+        Ver qué sigue activo
+      </Link>
     </main>
   )
 }

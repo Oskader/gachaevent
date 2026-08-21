@@ -1,32 +1,38 @@
+import { Skeleton } from '@/components/ui/skeleton'
+
 export default function Loading() {
   return (
-    <main className="min-h-dvh bg-[var(--color-bg-primary)] animate-pulse">
-      {/* Hero skeleton */}
-      <div className="w-full h-32 bg-white/5" />
+    <main className="mx-auto max-w-lg px-4 pb-10">
+      <div className="py-6">
+        <Skeleton className="mb-3 h-3 w-24 rounded-none" />
+        <Skeleton className="h-8 w-52 rounded-none" />
+      </div>
 
-      <div className="px-4 pb-24 space-y-6 mt-4">
-        {/* Events skeleton */}
+      <div className="space-y-9">
         <section>
-          <div className="h-5 w-32 bg-white/10 rounded mb-3" />
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="glass-card h-28 rounded-xl bg-white/5 border border-white/5" />
+          <Skeleton className="mb-4 h-3 w-16 rounded-none" />
+          <div className="space-y-6">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="space-y-2 border-b border-line pb-4">
+                <div className="flex justify-between gap-4">
+                  <Skeleton className="h-4 w-2/3 rounded-none" />
+                  <Skeleton className="h-4 w-16 rounded-none" />
+                </div>
+                <Skeleton className="h-3 w-full rounded-none" />
+                <Skeleton className="h-[3px] w-full rounded-none" />
+              </div>
             ))}
           </div>
         </section>
 
-        {/* Checklist skeleton */}
         <section>
-          <div className="flex justify-between mb-3">
-            <div className="h-5 w-32 bg-white/10 rounded" />
-            <div className="h-5 w-8 bg-white/10 rounded" />
-          </div>
-          <div className="w-full h-2 bg-white/10 rounded-full mb-4" />
-          <ul className="space-y-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <li key={i} className="h-10 bg-white/5 rounded-lg border border-white/5" />
+          <Skeleton className="mb-4 h-3 w-20 rounded-none" />
+          <Skeleton className="mb-5 h-[3px] w-full rounded-none" />
+          <div className="space-y-4">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-5 w-full rounded-none" />
             ))}
-          </ul>
+          </div>
         </section>
       </div>
     </main>
