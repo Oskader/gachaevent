@@ -21,6 +21,30 @@ export interface ParsedEvent {
   end_date: string
   /** "Current" | "Upcoming" — de qué sección de la página salió. */
   section: string
+  /**
+   * Nombre de la página del evento en la wiki, tal cual lo enlaza la tabla.
+   * No coincide siempre con `title`, porque este último se limpia para
+   * mostrarlo y la wiki usa subpáginas ("Divergent Universe/...").
+   * Es lo que permite ir a buscar la descripción a su propia página.
+   */
+  pageTitle?: string
+}
+
+/** El enlace de la celda apunta a la página del evento; File: y rojos no valen. */
+function pageTitleFromCell($: cheerio.CheerioAPI, td: unknown): string | undefined {
+  const link = $(td as never)
+    .find('a')
+    .filter((_i, a) => {
+      const href = $(a).attr('href') ?? ''
+      const t = $(a).attr('title') ?? ''
+      if (/\/wiki\/File:/i.test(href) || /^File:/i.test(t)) return false
+      // Los enlaces rojos apuntan a páginas que no existen.
+      return !/redlink=1/.test(href) && !/\(page does not exist\)/i.test(t)
+    })
+    .first()
+
+  const title = (link.attr('title') ?? '').trim()
+  return title || undefined
 }
 
 /** Solo estas secciones. "Permanent" y los archivos por año no interesan. */
@@ -94,7 +118,12 @@ export function parseFandomTables(html: string): ParsedEvent[] {
       const title = cleanTitle($(cells.get(eventCol)).text())
       if (!title) return
 
-      out.push({ title, ...dates, section })
+      out.push({
+        title,
+        ...dates,
+        section,
+        pageTitle: pageTitleFromCell($, cells.get(eventCol)),
+      })
     })
   })
 
@@ -128,7 +157,12 @@ export function parseEndfieldCards(html: string, section: string): ParsedEvent[]
     const dates = parseDuration(String(line).replace(/^[^:]*:\s*/, ''))
     if (!dates) return
 
-    out.push({ title, ...dates, section })
+    // El enlace a la página del evento cuelga de la tarjeta (de la imagen),
+    // no de la cabecera.
+    const link = $(card).find('a[title]').first()
+    const pageTitle = (link.attr('title') ?? '').trim() || undefined
+
+    out.push({ title, ...dates, section, pageTitle })
   })
 
   return out

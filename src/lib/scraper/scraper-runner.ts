@@ -4,6 +4,7 @@ import { fetchMediaWiki } from './browser'
 import { parseEndfieldCards, parseFandomTables, type ParsedEvent } from './parsers'
 import { dedupeByTitle, dedupKey } from './normalize'
 import { fetchHoyoEnrichment } from './hoyo-announcements'
+import { fetchDescriptions } from './descriptions'
 import { SOURCES } from './sources'
 
 export interface ScrapeResult {
@@ -13,6 +14,7 @@ export interface ScrapeResult {
   eventsEnriched?: number
   duplicatesCollapsed?: number
   eventsDeactivated?: number
+  eventsWithoutDescription?: number
   error?: string
 }
 
@@ -91,8 +93,29 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
     parsed.map((e) => ({ ...e, end_date: e.end_date }))
   )
 
-  // 2. Enriquecimiento con el tablón oficial (solo HSR y ZZZ lo tienen).
-  const enrichment = await fetchHoyoEnrichment(gameSlug)
+  // 2. Descripciones, en dos capas.
+  //
+  //    El tablón oficial es la mejor fuente —lo redacta el estudio— pero solo
+  //    cubre los anuncios vigentes de HSR y ZZZ: llegaba a 10 de 36 eventos.
+  //    Para el resto se va a la página propia de cada evento en la wiki, que
+  //    es donde está explicado qué hace.
+  const [enrichment, wikiDescriptions] = await Promise.all([
+    fetchHoyoEnrichment(gameSlug),
+    fetchDescriptions(
+      source.wikiHost,
+      deduped.map((e) => ({
+        key: e.title,
+        // La página BASE primero. La subpágina con fecha describe esa
+        // ocurrencia concreta y arranca con el reparto de personajes o el
+        // horario; la base explica qué es el evento, que es lo que queremos.
+        candidates: [
+          e.pageTitle?.replace(/\/\d{4}-\d{2}-\d{2}$/, ''),
+          e.title,
+          e.pageTitle,
+        ].filter((t): t is string => Boolean(t)),
+      }))
+    ),
+  ])
   let enriched = 0
 
   // 3. Merge contra lo ya guardado, para que una pasada sin descripción no
@@ -115,15 +138,29 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
   const usableDescription = (value: string | null | undefined) =>
     value && value.trim().length >= 30 ? value : null
 
+  let missingDescription = 0
+
   const rows = deduped.map((event) => {
     const extra = enrichment.get(dedupKey(event.title))
-    if (extra?.description) enriched++
     const prev = previous.get(event.title)
+
+    // Orden de preferencia: tablón oficial (lo escribe el estudio) > página
+    // del evento en la wiki > lo que ya hubiera guardado, si es una frase.
+    const description =
+      extra?.description ??
+      wikiDescriptions.get(event.title) ??
+      usableDescription(prev?.description)
+
+    if (extra?.description) enriched++
+    if (!description) {
+      missingDescription++
+      console.warn(`[${gameSlug}] sin descripción: "${event.title}"`)
+    }
 
     return {
       game_id: game.id,
       title: event.title,
-      description: extra?.description ?? usableDescription(prev?.description),
+      description,
       // El tablón oficial da la hora exacta; la wiki solo el día.
       start_date: extra?.start_date ?? event.start_date,
       end_date: extra?.end_date ?? event.end_date,
@@ -179,5 +216,6 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
     eventsEnriched: enriched,
     duplicatesCollapsed: parsed.length - deduped.length,
     eventsDeactivated: deactivated,
+    eventsWithoutDescription: missingDescription,
   }
 }

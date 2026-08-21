@@ -31,6 +31,8 @@ export interface GameSource {
   sections?: { index: number; label: string }[]
   /** Página legible por humanos, para guardar como referencia en la fila. */
   humanUrl: string
+  /** Host de la wiki, para ir a buscar la descripción a la página del evento. */
+  wikiHost: string
 }
 
 export const SOURCES: Record<string, GameSource> = {
@@ -42,6 +44,7 @@ export const SOURCES: Record<string, GameSource> = {
     sourceUrl:
       'https://honkai-star-rail.fandom.com/api.php?action=parse&page=Events&format=json',
     humanUrl: 'https://honkai-star-rail.fandom.com/wiki/Events',
+    wikiHost: 'honkai-star-rail.fandom.com',
   },
 
   'zenless-zone-zero': {
@@ -50,6 +53,7 @@ export const SOURCES: Record<string, GameSource> = {
     sourceUrl:
       'https://zenless-zone-zero.fandom.com/api.php?action=parse&page=Event&format=json',
     humanUrl: 'https://zenless-zone-zero.fandom.com/wiki/Event',
+    wikiHost: 'zenless-zone-zero.fandom.com',
   },
 
   'wuthering-waves': {
@@ -58,6 +62,7 @@ export const SOURCES: Record<string, GameSource> = {
     sourceUrl:
       'https://wutheringwaves.fandom.com/api.php?action=parse&page=Event&format=json',
     humanUrl: 'https://wutheringwaves.fandom.com/wiki/Event',
+    wikiHost: 'wutheringwaves.fandom.com',
   },
 
   'arknights-endfield': {
@@ -71,5 +76,6 @@ export const SOURCES: Record<string, GameSource> = {
       { index: 4, label: 'Upcoming' },
     ],
     humanUrl: 'https://endfield.wiki.gg/wiki/Event',
+    wikiHost: 'endfield.wiki.gg',
   },
 }

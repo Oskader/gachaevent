@@ -91,7 +91,13 @@ async function main() {
     }
 
     if (items === 0) {
-      console.log('   ! checklist vacío — node scripts/seed-checklist.mjs')
+      console.log('   ! checklist vacío — npm run seed:checklist')
+      problems++
+    }
+
+    const noDesc = live.filter((e) => !e.description)
+    for (const e of noDesc) {
+      console.log(`   ! sin descripción: "${e.title}"`)
       problems++
     }
 
