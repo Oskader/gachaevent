@@ -8,6 +8,20 @@ import type { Database } from '@/lib/supabase/types'
 
 type ChecklistItemRow = Database['public']['Tables']['checklist_items']['Row']
 
+/**
+ * El enum `checklist_category` vive en Postgres en inglés, pero la interfaz
+ * está en español. Se traduce al pintar en vez de tocar el enum, que exigiría
+ * migración y regenerar tipos.
+ */
+const CATEGORY_LABELS: Record<string, string> = {
+  other: 'rutina',
+  character: 'personaje',
+  weapon: 'arma',
+  artifact: 'reliquia',
+  story: 'historia',
+  achievement: 'reto',
+}
+
 interface Props {
   items: ChecklistItemRow[]
   /** IDs ya completados, calculados en el servidor. */
@@ -114,7 +128,7 @@ export function ChecklistClient({
                   className="tabular shrink-0 text-[10px] uppercase tracking-wider text-dim"
                   aria-hidden="true"
                 >
-                  {item.category}
+                  {CATEGORY_LABELS[item.category] ?? item.category}
                 </span>
               </label>
             </li>
