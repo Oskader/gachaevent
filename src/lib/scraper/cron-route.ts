@@ -22,7 +22,10 @@ export function createCronScraper(gameSlug: string) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const result = await runScraperForGame(gameSlug)
+    // El modo en seco queda DETRAS del CRON_SECRET: hace el trabajo
+    // completo pero no escribe, y devuelve las filas para revisarlas.
+    const dryRun = req.nextUrl.searchParams.get('dryRun') === '1'
+    const result = await runScraperForGame(gameSlug, { dryRun })
 
     if (!result.success) {
       console.error(`[${gameSlug}] scrape failed: ${result.error}`)

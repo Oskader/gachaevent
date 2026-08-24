@@ -1,7 +1,12 @@
 'use client'
 
 import { useClock } from '@/lib/use-clock'
-import { burnedFraction, countdownAt, urgencyColor } from '@/lib/urgency'
+import {
+  burnedFraction,
+  countdownAt,
+  urgencyColor,
+  type UrgencyWords,
+} from '@/lib/urgency'
 
 /**
  * El reloj no se lee durante el render ni se sincroniza con setState en un
@@ -16,9 +21,16 @@ import { burnedFraction, countdownAt, urgencyColor } from '@/lib/urgency'
 export function CountdownLabel({
   endDate,
   className = '',
+  words,
 }: {
   endDate: string
   className?: string
+  /**
+   * Palabras del lector de pantalla, en el idioma activo. Llegan por props
+   * desde el servidor: este componente es de cliente y no puede leer la
+   * cookie sin volver a renderizar en el navegador.
+   */
+  words?: UrgencyWords
 }) {
   const now = useClock()
 
@@ -34,12 +46,12 @@ export function CountdownLabel({
     )
   }
 
-  const cd = countdownAt(endDate, now)
+  const cd = countdownAt(endDate, now, words)
 
   if (cd.level === 'ended') {
     return (
       <span className={`tabular text-sm text-[var(--text-faint)] ${className}`}>
-        terminado
+        {cd.srLabel.toLowerCase()}
       </span>
     )
   }

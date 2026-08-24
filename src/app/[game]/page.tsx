@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/page-header'
 import { EventRow } from '@/components/event-row'
 import { ChecklistSection } from './components/ChecklistSection'
+import { getI18n } from '@/lib/i18n'
 import type { Database } from '@/lib/supabase/types'
 
 interface Props {
@@ -25,18 +26,20 @@ async function getGame(slug: string) {
 // Sin esto las cuatro páginas de juego compartían título y descripción.
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { game: slug } = await params
+  const { t } = await getI18n()
   const game = await getGame(slug)
 
-  if (!game) return { title: 'Juego no encontrado' }
+  if (!game) return { title: t.game.notFound }
 
   return {
     title: game.name,
-    description: `Eventos activos y checklist de endgame de ${game.name}.`,
+    description: t.game.metaDescription.replace('{game}', game.name),
   }
 }
 
 export default async function GamePage({ params }: Props) {
   const { game: gameSlug } = await params
+  const { locale, t } = await getI18n()
   const supabase = await createClient()
 
   const game = await getGame(gameSlug)
@@ -70,12 +73,9 @@ export default async function GamePage({ params }: Props) {
 
       <div className="space-y-9">
         <section>
-          <h2 className="eyebrow mb-3">Eventos</h2>
+          <h2 className="eyebrow mb-3">{t.game.eventsHeading}</h2>
           {activeEvents.length === 0 ? (
-            <p className="text-sm text-dim">
-              No hay eventos activos ahora mismo. El scraper revisa la wiki
-              cada mañana.
-            </p>
+            <p className="text-sm text-dim">{t.game.noEvents}</p>
           ) : (
             <div>
               {activeEvents.map((event) => (
@@ -83,6 +83,9 @@ export default async function GamePage({ params }: Props) {
                   key={event.id}
                   event={event}
                   accentColor={game.color_accent}
+                  locale={locale}
+                  words={t.urgency}
+                  andMore={t.event.andMore}
                 />
               ))}
             </div>
@@ -93,6 +96,8 @@ export default async function GamePage({ params }: Props) {
           items={checklistItems ?? []}
           gameSlug={game.slug}
           accentColor={game.color_accent}
+          locale={locale}
+          labels={t.game}
         />
       </div>
     </main>

@@ -4,23 +4,16 @@ import { useOptimistic, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Checkbox } from '@/components/ui/checkbox'
 import { toggleChecklistItem } from '../actions'
+import { pickTitle, type Dictionary, type Locale } from '@/lib/i18n/shared'
 import type { Database } from '@/lib/supabase/types'
 
 type ChecklistItemRow = Database['public']['Tables']['checklist_items']['Row']
 
 /**
- * El enum `checklist_category` vive en Postgres en inglés, pero la interfaz
- * está en español. Se traduce al pintar en vez de tocar el enum, que exigiría
- * migración y regenerar tipos.
+ * El enum `checklist_category` vive en Postgres en inglés y no se migra: las
+ * etiquetas se traducen al pintar, y ahora salen del diccionario en vez de
+ * estar incrustadas aquí.
  */
-const CATEGORY_LABELS: Record<string, string> = {
-  other: 'rutina',
-  character: 'personaje',
-  weapon: 'arma',
-  artifact: 'reliquia',
-  story: 'historia',
-  achievement: 'reto',
-}
 
 interface Props {
   items: ChecklistItemRow[]
@@ -28,6 +21,8 @@ interface Props {
   completedIds: string[]
   gameSlug: string
   accentColor: string
+  locale: Locale
+  labels: Dictionary['game']
   isSignedIn: boolean
 }
 
@@ -37,6 +32,8 @@ export function ChecklistClient({
   gameSlug,
   accentColor,
   isSignedIn,
+  locale,
+  labels,
 }: Props) {
   const [, startTransition] = useTransition()
 
@@ -60,7 +57,7 @@ export function ChecklistClient({
       const result = await toggleChecklistItem(itemId, willBeCompleted, gameSlug)
       // El error ya no se descarta: si RLS rechaza o cae la red, el usuario
       // se entera y el estado optimista se deshace al revalidar.
-      if (!result.ok) toast.error(result.error ?? 'No se pudo guardar')
+      if (!result.ok) toast.error(result.error ?? labels.saveFailed)
     })
   }
 
@@ -72,7 +69,7 @@ export function ChecklistClient({
     <section aria-labelledby="checklist-heading">
       <div className="mb-4 flex items-baseline justify-between gap-4">
         <h2 id="checklist-heading" className="eyebrow flex-1">
-          Endgame
+          {labels.checklistHeading}
         </h2>
         <span className="tabular text-sm text-dim">
           <span style={{ color: done > 0 ? accentColor : undefined }}>{done}</span>
@@ -88,7 +85,7 @@ export function ChecklistClient({
         aria-valuenow={percent}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`Progreso endgame: ${done} de ${total}`}
+        aria-label={`${labels.progressAria}: ${done}/${total}`}
       >
         <div
           className="h-full transition-[width] duration-500 ease-out"
@@ -122,13 +119,13 @@ export function ChecklistClient({
                     isDone ? 'text-[var(--text-faint)] line-through' : 'text-foreground'
                   }`}
                 >
-                  {item.title}
+                  {pickTitle(item, locale)}
                 </span>
                 <span
                   className="tabular shrink-0 text-[10px] uppercase tracking-wider text-dim"
                   aria-hidden="true"
                 >
-                  {CATEGORY_LABELS[item.category] ?? item.category}
+                  {labels.categories[item.category] ?? item.category}
                 </span>
               </label>
             </li>

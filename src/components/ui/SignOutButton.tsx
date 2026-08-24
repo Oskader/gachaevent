@@ -6,7 +6,11 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
-export function SignOutButton() {
+export function SignOutButton({
+  labels,
+}: {
+  labels: { signOut: string; signingOut: string; signOutFailed: string }
+}) {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
@@ -18,7 +22,7 @@ export function SignOutButton() {
     if (error) {
       // Antes el error se ignoraba y el botón se quedaba en "Saliendo…"
       // para siempre.
-      toast.error('No se pudo cerrar la sesión')
+      toast.error(labels.signOutFailed)
       setLoading(false)
       return
     }
@@ -36,7 +40,7 @@ export function SignOutButton() {
       disabled={loading}
       className="w-full rounded-none border-line-strong text-sm hover:border-[var(--urgency-high)] hover:text-[var(--urgency-high)]"
     >
-      {loading ? 'Cerrando sesión…' : 'Cerrar sesión'}
+      {loading ? labels.signingOut : labels.signOut}
     </Button>
   )
 }

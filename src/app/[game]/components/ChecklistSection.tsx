@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ChecklistClient } from './ChecklistClient'
 import { createClient } from '@/lib/supabase/server'
+import type { Dictionary, Locale } from '@/lib/i18n'
 import type { Database } from '@/lib/supabase/types'
 
 type ChecklistItemRow = Database['public']['Tables']['checklist_items']['Row']
@@ -9,10 +10,14 @@ export async function ChecklistSection({
   items,
   gameSlug,
   accentColor,
+  locale,
+  labels,
 }: {
   items: ChecklistItemRow[]
   gameSlug: string
   accentColor: string
+  locale: Locale
+  labels: Dictionary['game']
 }) {
   const supabase = await createClient()
 
@@ -42,10 +47,8 @@ export async function ChecklistSection({
   if (items.length === 0) {
     return (
       <section>
-        <h2 className="eyebrow mb-4">Endgame</h2>
-        <p className="text-sm text-dim">
-          Todavía no hay tareas de endgame para este juego.
-        </p>
+        <h2 className="eyebrow mb-4">{labels.checklistHeading}</h2>
+        <p className="text-sm text-dim">{labels.checklistEmpty}</p>
       </section>
     )
   }
@@ -58,6 +61,8 @@ export async function ChecklistSection({
         gameSlug={gameSlug}
         accentColor={accentColor}
         isSignedIn={Boolean(user)}
+        locale={locale}
+        labels={labels}
       />
 
       {!user && (
@@ -66,9 +71,9 @@ export async function ChecklistSection({
             href={`/login?next=/${gameSlug}`}
             className="font-medium text-foreground underline underline-offset-4 hover:text-[var(--urgency-low)]"
           >
-            Inicia sesión
+            {labels.signInLink}
           </Link>{' '}
-          para guardar tu progreso entre sesiones.
+          {labels.signInRest}
         </p>
       )}
     </div>

@@ -54,59 +54,60 @@ const headers = {
  * is_permanent: true = parte fija del juego; false = depende de la versión.
  */
 const CHECKLISTS = {
+  // [titulo en espanol, categoria, titulo en ingles].
+  // Los nombres de sistema del juego estan verificados contra la wiki inglesa
+  // de cada titulo: 'Caverna de Corrosion' es 'Cavern of Corrosion', no una
+  // traduccion literal. En Endfield se comprobaron ademas contra
+  // endfield.wiki.gg: Sanity, Operational Manual, AIC, Protocol Pass, Operator.
+
   'honkai-star-rail': [
-    ['Gastar el Poder de Travesía antes de que rebose', 'other'],
-    ['Completar el Entrenamiento Diario', 'other'],
-    ['Recoger y relanzar las Asignaciones', 'other'],
-    ['Eco de Guerra: 3 intentos de la semana', 'other'],
-    ['Universo Simulado de la semana', 'other'],
-    ['Farmear reliquias en la Caverna de Corrosión', 'artifact'],
-    ['Farmear material de Conos de Luz', 'weapon'],
-    ['Subir al personaje que estés trabajando', 'character'],
-    ['Memoria del Caos: cerrar las 12 plantas', 'achievement'],
-    ['Ficción Pura y Sombra Apocalíptica del ciclo', 'achievement'],
+    ['Gastar el Poder de Travesía antes de que rebose', 'other', 'Spend Trailblaze Power before it overflows'],
+    ['Completar el Entrenamiento Diario', 'other', 'Complete Daily Training'],
+    ['Recoger y relanzar las Asignaciones', 'other', 'Collect and redispatch Assignments'],
+    ['Eco de Guerra: 3 intentos de la semana', 'other', 'Echo of War: 3 attempts this week'],
+    ['Universo Simulado de la semana', 'other', 'Simulated Universe for the week'],
+    ['Farmear reliquias en la Caverna de Corrosión', 'artifact', 'Farm Relics in Cavern of Corrosion'],
+    ['Farmear material de Conos de Luz', 'weapon', 'Farm Light Cone materials'],
+    ['Subir al personaje que estés trabajando', 'character', 'Level up the character you are working on'],
+    ['Memoria del Caos: cerrar las 12 plantas', 'achievement', 'Memory of Chaos: clear all 12 floors'],
+    ['Ficción Pura y Sombra Apocalíptica del ciclo', 'achievement', 'Pure Fiction and Apocalyptic Shadow for the cycle'],
   ],
 
   'zenless-zone-zero': [
-    ['Gastar la Batería antes de que llegue al tope', 'other'],
-    ['Completar las comisiones diarias de Inter-Knot', 'other'],
-    ['Recoger los ingresos del videoclub', 'other'],
-    ['Ridu Weekly: tareas de la semana', 'other'],
-    ['Zona Hueca (Hollow Zero) de la semana', 'other'],
-    ['Farmear discos de impulso', 'artifact'],
-    ['Farmear material de motores W', 'weapon'],
-    ['Ascender al Agente en curso', 'character'],
-    ['Defensa de Shiyu: cerrar el piso crítico', 'achievement'],
-    ['Asalto Letal del ciclo', 'achievement'],
+    ['Gastar la Batería antes de que llegue al tope', 'other', 'Spend Battery Charge before it caps'],
+    ['Completar las comisiones diarias de Inter-Knot', 'other', 'Complete the Inter-Knot daily commissions'],
+    ['Recoger los ingresos del videoclub', 'other', 'Collect the video store income'],
+    ['Ridu Weekly: tareas de la semana', 'other', 'Ridu Weekly: tasks for the week'],
+    ['Zona Hueca (Hollow Zero) de la semana', 'other', 'Hollow Zero for the week'],
+    ['Farmear discos de impulso', 'artifact', 'Farm Drive Discs'],
+    ['Farmear material de motores W', 'weapon', 'Farm W-Engine materials'],
+    ['Ascender al Agente en curso', 'character', 'Ascend the Agent you are working on'],
+    ['Defensa de Shiyu: cerrar el piso crítico', 'achievement', 'Shiyu Defense: clear the Critical Node'],
+    ['Asalto Letal del ciclo', 'achievement', 'Deadly Assault for the cycle'],
   ],
 
   'wuthering-waves': [
-    ['Gastar el Waveplate antes de que se llene', 'other'],
-    ['Completar las actividades diarias', 'other'],
-    ['Reclamar el Pioneer Podcast', 'other'],
-    ['Desafío Semanal: jefes de la semana', 'other'],
-    ['Entrenamiento de Simulación de la semana', 'other'],
-    ['Farmear Ecos en los Campos Tácitos', 'artifact'],
-    ['Forgery Challenge: material de armas', 'weapon'],
-    ['Ascender al Resonador en curso', 'character'],
-    ['Torre de Adversidad: cerrar los tres sectores', 'achievement'],
-    ['Yermos Gimientes del ciclo', 'achievement'],
+    ['Gastar el Waveplate antes de que se llene', 'other', 'Spend Waveplate before it caps'],
+    ['Completar las actividades diarias', 'other', 'Complete the daily activities'],
+    ['Reclamar el Pioneer Podcast', 'other', 'Claim the Pioneer Podcast'],
+    ['Desafío Semanal: jefes de la semana', 'other', 'Weekly Challenge: bosses for the week'],
+    ['Entrenamiento de Simulación de la semana', 'other', 'Simulation Training for the week'],
+    ['Farmear Ecos en los Campos Tácitos', 'artifact', 'Farm Echoes in Tacet Fields'],
+    ['Forgery Challenge: material de armas', 'weapon', 'Forgery Challenge: weapon materials'],
+    ['Ascender al Resonador en curso', 'character', 'Ascend the Resonator you are working on'],
+    ['Torre de Adversidad: cerrar los tres sectores', 'achievement', 'Tower of Adversity: clear all three sectors'],
+    ['Yermos Gimientes del ciclo', 'achievement', 'Whimpering Wastes for the cycle'],
   ],
 
-  // Endfield es el más reciente de los cuatro y su wiki aún está incompleta.
-  // Solo se siembran sistemas verificados como páginas existentes
-  // (Sanity, Operational Manual, Regional Development, Acquisition Center,
-  // Arsenal Exchange, Protocol Pass, Findings), redactados de forma que
-  // siguen siendo ciertos aunque cambien los detalles.
   'arknights-endfield': [
-    ['Gastar la Cordura antes de que llegue al tope', 'other'],
-    ['Completar el Manual de Operaciones del día', 'other'],
-    ['Recoger la producción de la base', 'other'],
-    ['Reclamar el Centro de Adquisiciones', 'other'],
-    ['Canjear lo pendiente en el Arsenal', 'other'],
-    ['Avanzar el Protocol Pass', 'other'],
-    ['Subir al operador en el que estés trabajando', 'character'],
-    ['Avanzar la historia principal', 'story'],
+    ['Gastar la Cordura antes de que llegue al tope', 'other', 'Spend Sanity before it caps'],
+    ['Completar el Manual de Operaciones del día', 'other', 'Complete the daily Operational Manual'],
+    ['Recoger la producción de la base', 'other', 'Collect the AIC production'],
+    ['Reclamar el Centro de Adquisiciones', 'other', 'Claim the Acquisition Center'],
+    ['Canjear lo pendiente en el Arsenal', 'other', 'Redeem what is pending in the Arsenal'],
+    ['Avanzar el Protocol Pass', 'other', 'Advance the Protocol Pass'],
+    ['Subir al operador en el que estés trabajando', 'character', 'Level up the Operator you are working on'],
+    ['Avanzar la historia principal', 'story', 'Advance the main story'],
   ],
 }
 
@@ -138,10 +139,14 @@ async function main() {
 
     console.log(`\n${game.name} — ${items.length} items`)
 
-    for (const [index, [title, category]] of items.entries()) {
+    for (const [index, [title, category, titleEn]] of items.entries()) {
       const row = {
         game_id: game.id,
+        // `title` sigue escribiendose porque la columna vieja aun existe: si
+        // se dejara de rellenar, las filas nuevas quedarian con NULL ahi.
         title,
+        title_es: title,
+        title_en: titleEn,
         category,
         sort_order: index,
         is_permanent: true,
@@ -151,13 +156,22 @@ async function main() {
       const existingId = byTitle.get(title)
       const verb = existingId ? 'actualiza' : 'inserta '
       console.log(`  ${verb} [${category.padEnd(11)}] ${title}`)
+      console.log(`  ${' '.repeat(9)} ${' '.repeat(11)}  EN: ${titleEn}`)
 
       if (DRY_RUN) continue
 
       if (existingId) {
+        // `title` NO se actualiza: es la clave natural con la que se ha
+        // encontrado esta fila. Las columnas de idioma sí, que es lo que
+        // trae este script cuando cambia una traduccion.
         await rest(`checklist_items?id=eq.${existingId}`, {
           method: 'PATCH',
-          body: JSON.stringify({ category, sort_order: index }),
+          body: JSON.stringify({
+            category,
+            sort_order: index,
+            title_es: title,
+            title_en: titleEn,
+          }),
         })
         updated++
       } else {

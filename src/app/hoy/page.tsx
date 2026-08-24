@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { EventRow } from '@/components/event-row'
 import { PageHeader } from '@/components/page-header'
 import { countdownAt, requestNow } from '@/lib/urgency'
+import { getI18n, type Dictionary, type Locale } from '@/lib/i18n'
 import type { Database } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Hoy' }
@@ -16,6 +17,7 @@ type EventWithGame = Database['public']['Tables']['events']['Row'] & {
 }
 
 export default async function HoyPage() {
+  const { locale, t } = await getI18n()
   const supabase = await createClient()
   const now = requestNow()
 
@@ -38,21 +40,36 @@ export default async function HoyPage() {
   return (
     <main className="mx-auto max-w-lg px-4 pb-10">
       <PageHeader
-        title="Hoy"
-        meta={`${rows.length} ${rows.length === 1 ? 'evento activo' : 'eventos activos'}`}
+        title={t.hoy.title}
+        meta={`${rows.length} ${rows.length === 1 ? t.hoy.activeEvent : t.hoy.activeEvents}`}
       />
 
       {rows.length === 0 ? (
-        <EmptyState />
+        <EmptyState t={t} />
       ) : (
         <div className="space-y-9">
           <Group
-            label="Se acaba hoy"
+            label={t.hoy.endsToday}
             events={byLevel(['high'])}
-            emptyNote="Nada vence en las próximas 12 horas."
+            emptyNote={t.hoy.nothingSoon}
+            locale={locale}
+            words={t.urgency}
+            andMore={t.event.andMore}
           />
-          <Group label="Esta semana" events={byLevel(['mid', 'low'])} />
-          <Group label="Más adelante" events={byLevel(['none'])} />
+          <Group
+            label={t.hoy.thisWeek}
+            events={byLevel(['mid', 'low'])}
+            locale={locale}
+            words={t.urgency}
+            andMore={t.event.andMore}
+          />
+          <Group
+            label={t.hoy.later}
+            events={byLevel(['none'])}
+            locale={locale}
+            words={t.urgency}
+            andMore={t.event.andMore}
+          />
         </div>
       )}
     </main>
@@ -63,10 +80,16 @@ function Group({
   label,
   events,
   emptyNote,
+  locale,
+  words,
+  andMore,
 }: {
   label: string
   events: EventWithGame[]
   emptyNote?: string
+  locale: Locale
+  words: Dictionary['urgency']
+  andMore: string
 }) {
   if (events.length === 0 && !emptyNote) return null
 
@@ -83,6 +106,9 @@ function Group({
               event={event}
               accentColor={event.games?.color_accent ?? 'var(--urgency-none)'}
               gameName={event.games?.name}
+              locale={locale}
+              words={words}
+              andMore={andMore}
             />
           ))}
         </div>
@@ -91,21 +117,18 @@ function Group({
   )
 }
 
-function EmptyState() {
+function EmptyState({ t }: { t: Dictionary }) {
   return (
     <div className="border border-line bg-panel px-5 py-8 text-center">
       <p className="mb-1 text-sm font-medium text-foreground">
-        No hay eventos activos
+        {t.hoy.emptyTitle}
       </p>
-      <p className="mb-5 text-sm text-dim">
-        Los scrapers corren cada mañana. Mientras tanto puedes adelantar el
-        checklist de endgame.
-      </p>
+      <p className="mb-5 text-sm text-dim">{t.hoy.emptyBody}</p>
       <Link
         href="/juegos"
         className="tabular text-xs uppercase tracking-[0.14em] text-foreground underline underline-offset-4 hover:text-[var(--urgency-low)]"
       >
-        Ver juegos
+        {t.hoy.seeGames}
       </Link>
     </div>
   )

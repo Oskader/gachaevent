@@ -1,4 +1,6 @@
 import { CountdownLabel, Fuse } from '@/components/ui/countdown'
+import { pickDescription, type Locale } from '@/lib/i18n/shared'
+import type { UrgencyWords } from '@/lib/urgency'
 import type { Database } from '@/lib/supabase/types'
 
 type EventRow = Database['public']['Tables']['events']['Row']
@@ -8,6 +10,11 @@ interface Props {
   accentColor: string
   /** En la vista agregada hace falta saber de qué juego es cada fila. */
   gameName?: string
+  locale: Locale
+  /** Palabras del lector de pantalla, para la cuenta atrás. */
+  words: UrgencyWords
+  /** Plantilla "y {n} más" del corte de recompensas. */
+  andMore: string
 }
 
 /**
@@ -17,9 +24,20 @@ interface Props {
  * porque en un gacha la pregunta no es "qué evento es" sino "cuánto me
  * queda". La mecha de abajo cierra la fila y da la lectura de un vistazo.
  */
-export function EventRow({ event, accentColor, gameName }: Props) {
+export function EventRow({
+  event,
+  accentColor,
+  gameName,
+  locale,
+  words,
+  andMore,
+}: Props) {
   const rewards = event.rewards as { items?: string[] } | null
   const items = rewards?.items ?? []
+
+  // Cae al otro idioma si falta la traducción: mejor inglés que una tarjeta
+  // muda mientras la cola de traducción se vacía.
+  const description = pickDescription(event, locale)
 
   return (
     <article className="group relative border-b border-line py-4 last:border-b-0">
@@ -40,12 +58,12 @@ export function EventRow({ event, accentColor, gameName }: Props) {
         <h3 className="flex-1 text-sm font-semibold leading-snug text-foreground">
           {event.title}
         </h3>
-        <CountdownLabel endDate={event.end_date} className="shrink-0" />
+        <CountdownLabel endDate={event.end_date} className="shrink-0" words={words} />
       </div>
 
-      {event.description && (
+      {description && (
         <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-dim">
-          {event.description}
+          {description}
         </p>
       )}
 
@@ -61,7 +79,7 @@ export function EventRow({ event, accentColor, gameName }: Props) {
           ))}
           {items.length > 4 && (
             <li className="tabular text-[11px] text-[var(--text-faint)]">
-              y {items.length - 4} más
+              {andMore.replace('{n}', String(items.length - 4))}
             </li>
           )}
         </ul>

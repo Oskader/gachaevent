@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/supabase/types'
-import { fetchMediaWiki } from './browser'
+import { fetchMediaWiki, fetchSectionIndex } from './browser'
 import { parseEndfieldCards, parseFandomTables, type ParsedEvent } from './parsers'
 import { dedupeByTitle, dedupKey } from './normalize'
 import { fetchHoyoEnrichment } from './hoyo-announcements'
 import { fetchDescriptions } from './descriptions'
+import { translateToSpanish } from './translate'
 import { SOURCES } from './sources'
 
 export interface ScrapeResult {
@@ -14,6 +15,10 @@ export interface ScrapeResult {
   eventsEnriched?: number
   duplicatesCollapsed?: number
   eventsDeactivated?: number
+  eventsExpired?: number
+  eventsTranslated?: number
+  /** Solo en seco: lo que se habria escrito, para poder revisarlo. */
+  rows?: unknown[]
   eventsWithoutDescription?: number
   error?: string
 }
@@ -33,11 +38,21 @@ async function collectEvents(gameSlug: string): Promise<ParsedEvent[]> {
   if (!source) throw new Error(`No source configured for ${gameSlug}`)
 
   if (source.parser === 'endfield-cards') {
+    const available = await fetchSectionIndex(source.sourceUrl)
     const collected: ParsedEvent[] = []
-    for (const section of source.sections ?? []) {
-      const url = `${source.sourceUrl}&section=${section.index}`
-      const { html } = await fetchMediaWiki(url)
-      collected.push(...parseEndfieldCards(html, section.label))
+
+    for (const label of source.sections ?? []) {
+      const index = available.get(label.toLowerCase())
+      // Que falte una sección declarada es un cambio de maquetación, no un
+      // "hoy no hay nada": hay que verlo, igual que el parseo de 0 filas.
+      if (!index) {
+        throw new Error(
+          `La sección "${label}" ya no existe en ${source.humanUrl} ` +
+            `(hay: ${[...available.keys()].join(', ')})`
+        )
+      }
+      const { html } = await fetchMediaWiki(`${source.sourceUrl}&section=${index}`)
+      collected.push(...parseEndfieldCards(html, label))
     }
     return collected
   }
@@ -46,11 +61,19 @@ async function collectEvents(gameSlug: string): Promise<ParsedEvent[]> {
   return parseFandomTables(html)
 }
 
-export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult> {
+export async function runScraperForGame(
+  gameSlug: string,
+  options: { dryRun?: boolean } = {}
+): Promise<ScrapeResult> {
   const source = SOURCES[gameSlug]
   if (!source) {
     return { success: false, eventsUpserted: 0, error: `Unknown game: ${gameSlug}` }
   }
+
+  // Una sola lectura del reloj para toda la pasada: decide qué ocurrencia gana
+  // el dedupe y qué filas siguen vigentes, y las dos respuestas tienen que ser
+  // coherentes entre sí.
+  const now = Date.now()
 
   let supabase: ReturnType<typeof getServiceRoleClient>
   try {
@@ -89,9 +112,7 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
     }
   }
 
-  const deduped = dedupeByTitle(
-    parsed.map((e) => ({ ...e, end_date: e.end_date }))
-  )
+  const deduped = dedupeByTitle(parsed, now)
 
   // 2. Descripciones, en dos capas.
   //
@@ -124,7 +145,7 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
   //    motivo que en el paso 4: un `in` sobre títulos con comillas no casa.
   const { data: existing } = await supabase
     .from('events')
-    .select('title, description, rewards')
+    .select('title, description_en, description_es, rewards')
     .eq('game_id', game.id)
 
   const previous = new Map((existing ?? []).map((row) => [row.title, row]))
@@ -139,36 +160,93 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
     value && value.trim().length >= 30 ? value : null
 
   let missingDescription = 0
+  let expired = 0
 
-  const rows = deduped.map((event) => {
+  // Primera vuelta: resolver el inglés y decidir quién necesita traducción.
+  const resolved = deduped.map((event) => {
     const extra = enrichment.get(dedupKey(event.title))
     const prev = previous.get(event.title)
 
     // Orden de preferencia: tablón oficial (lo escribe el estudio) > página
     // del evento en la wiki > lo que ya hubiera guardado, si es una frase.
-    const description =
+    const description_en =
       extra?.description ??
       wikiDescriptions.get(event.title) ??
-      usableDescription(prev?.description)
+      usableDescription(prev?.description_en)
 
     if (extra?.description) enriched++
-    if (!description) {
+
+    // El español oficial gana siempre: lo redacta el estudio.
+    // Si no lo hay, se reaprovecha el guardado SOLO si el inglés no ha
+    // cambiado; si cambió, la traducción vieja ya no describe lo mismo.
+    const officialEs = usableDescription(extra?.description_es)
+    const reusableEs =
+      prev?.description_en === description_en
+        ? usableDescription(prev?.description_es)
+        : null
+
+    return { event, extra, prev, description_en, description_es: officialEs ?? reusableEs }
+  })
+
+  // Traducir solo lo que no tiene español todavía. En régimen normal son
+  // cero o tres llamadas, no una por evento.
+  const translated = await translateToSpanish(
+    resolved
+      .filter((r) => !r.description_es && r.description_en)
+      .map((r) => ({ key: r.event.title, textEn: r.description_en as string }))
+  )
+
+  const rows = resolved.map(({ event, extra, prev, ...resolvedRow }) => {
+    const description_en = resolvedRow.description_en
+    const description_es =
+      resolvedRow.description_es ?? translated.get(event.title) ?? null
+
+    if (!description_en) {
       missingDescription++
       console.warn(`[${gameSlug}] sin descripción: "${event.title}"`)
     }
 
+    // El tablón oficial da la hora exacta; la wiki solo el día.
+    const start_date = extra?.start_date ?? event.start_date
+    const end_date = extra?.end_date ?? event.end_date
+
+    // `is_active` es "¿sigue vivo?", no "¿lo lista la fuente?". Marcarlo
+    // siempre true dejaba activos en la base de datos eventos terminados hace
+    // semanas, porque la reconciliación solo mira lo que la fuente deja de
+    // listar y las tablas "Current" de las wikis se quedan desfasadas.
+    const live = Date.parse(end_date) > now
+    if (!live) expired++
+
     return {
       game_id: game.id,
       title: event.title,
-      description,
-      // El tablón oficial da la hora exacta; la wiki solo el día.
-      start_date: extra?.start_date ?? event.start_date,
-      end_date: extra?.end_date ?? event.end_date,
+      description_en,
+      description_es,
+      start_date,
+      end_date,
       rewards: prev?.rewards ?? null,
       source_url: source.humanUrl,
-      is_active: true,
+      is_active: live,
     }
   })
+
+  // En seco se hace TODO el trabajo —descarga, parseo, descripciones,
+  // traducción— y se devuelve lo que se habría escrito, sin escribirlo ni
+  // reconciliar. Es la única forma de revisar una traducción antes de que
+  // llegue a la base de datos.
+  if (options.dryRun) {
+    return {
+      success: true,
+      eventsUpserted: 0,
+      eventsParsed: parsed.length,
+      eventsEnriched: enriched,
+      duplicatesCollapsed: parsed.length - deduped.length,
+      eventsTranslated: translated.size,
+      eventsExpired: expired,
+      eventsWithoutDescription: missingDescription,
+      rows,
+    }
+  }
 
   const { error: upsertError } = await supabase
     .from('events')
@@ -191,13 +269,15 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
   //    que acababa de escribir y la reactivaba en la pasada siguiente.
   const { data: activeRows } = await supabase
     .from('events')
-    .select('id, title')
+    .select('id, title, end_date')
     .eq('game_id', game.id)
     .eq('is_active', true)
 
-  const wanted = new Set(rows.map((r) => r.title))
+  // Vigente = lo lista la fuente Y no ha terminado. La segunda mitad recoge
+  // además las filas heredadas que ninguna pasada anterior llegó a tocar.
+  const wanted = new Set(rows.filter((r) => r.is_active).map((r) => r.title))
   const staleIds = (activeRows ?? [])
-    .filter((r) => !wanted.has(r.title))
+    .filter((r) => !wanted.has(r.title) || Date.parse(r.end_date) <= now)
     .map((r) => r.id)
 
   let deactivated = 0
@@ -216,6 +296,8 @@ export async function runScraperForGame(gameSlug: string): Promise<ScrapeResult>
     eventsEnriched: enriched,
     duplicatesCollapsed: parsed.length - deduped.length,
     eventsDeactivated: deactivated,
+    eventsExpired: expired,
+    eventsTranslated: translated.size,
     eventsWithoutDescription: missingDescription,
   }
 }

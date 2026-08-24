@@ -3,6 +3,7 @@ import { Archivo, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { BottomNav } from "@/components/bottom-nav";
+import { getI18n } from "@/lib/i18n";
 import "./globals.css";
 
 // Antes entraban por @import de Google Fonts dentro del CSS, que bloquea
@@ -44,21 +45,24 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // El idioma sale de la cookie, no de la URL: ver src/lib/i18n/index.ts.
+  const { locale, t } = await getI18n();
+
   return (
     <html
-      lang="es"
+      lang={locale}
       className={`dark ${archivo.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <body className="flex min-h-dvh flex-col antialiased">
-        <OfflineBanner />
+        <OfflineBanner label={t.offline.banner} />
         <div className="flex-1">{children}</div>
-        <BottomNav />
+        <BottomNav labels={t.nav} />
         <Toaster theme="dark" position="top-center" />
       </body>
     </html>

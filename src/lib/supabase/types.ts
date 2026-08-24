@@ -24,6 +24,8 @@ export type Database = {
           is_permanent: boolean
           sort_order: number
           title: string
+          title_en: string | null
+          title_es: string | null
         }
         Insert: {
           category?: Database["public"]["Enums"]["checklist_category"]
@@ -34,6 +36,8 @@ export type Database = {
           is_permanent?: boolean
           sort_order?: number
           title: string
+          title_en?: string | null
+          title_es?: string | null
         }
         Update: {
           category?: Database["public"]["Enums"]["checklist_category"]
@@ -44,6 +48,8 @@ export type Database = {
           is_permanent?: boolean
           sort_order?: number
           title?: string
+          title_en?: string | null
+          title_es?: string | null
         }
         Relationships: [
           {
@@ -59,6 +65,8 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          description_en: string | null
+          description_es: string | null
           end_date: string
           game_id: string
           id: string
@@ -72,6 +80,8 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          description_en?: string | null
+          description_es?: string | null
           end_date: string
           game_id: string
           id?: string
@@ -85,6 +95,8 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          description_en?: string | null
+          description_es?: string | null
           end_date?: string
           game_id?: string
           id?: string

@@ -2,25 +2,41 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CalendarClock, LayoutGrid, User } from 'lucide-react'
-
-const ITEMS = [
-  { href: '/hoy', label: 'Hoy', icon: CalendarClock },
-  { href: '/juegos', label: 'Juegos', icon: LayoutGrid },
-  { href: '/cuenta', label: 'Cuenta', icon: User },
-] as const
+import { CalendarClock, LayoutGrid, Settings, User } from 'lucide-react'
 
 /** Rutas donde la barra estorba en vez de ayudar. */
 const HIDDEN_ON = ['/login', '/register', '/']
 
-export function BottomNav() {
+interface Props {
+  /**
+   * Los textos llegan del servidor. Este componente es de cliente —necesita
+   * `usePathname` para saber qué pestaña está activa— y leer la cookie aquí
+   * obligaría a un segundo render en el navegador.
+   */
+  labels: {
+    hoy: string
+    juegos: string
+    cuenta: string
+    ajustes: string
+    aria: string
+  }
+}
+
+export function BottomNav({ labels }: Props) {
   const pathname = usePathname()
 
   if (HIDDEN_ON.includes(pathname)) return null
 
+  const items = [
+    { href: '/hoy', label: labels.hoy, icon: CalendarClock },
+    { href: '/juegos', label: labels.juegos, icon: LayoutGrid },
+    { href: '/cuenta', label: labels.cuenta, icon: User },
+    { href: '/ajustes', label: labels.ajustes, icon: Settings },
+  ]
+
   return (
     <nav
-      aria-label="Navegación principal"
+      aria-label={labels.aria}
       // Fondo sólido, no translúcido: el contenido no debe leerse por
       // detrás de la navegación, y el sistema no usa blur en ningún sitio.
       className="sticky bottom-0 z-40 border-t border-line bg-background"
@@ -28,7 +44,7 @@ export function BottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <ul className="mx-auto flex max-w-lg">
-        {ITEMS.map(({ href, label, icon: Icon }) => {
+        {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`)
           return (
             <li key={href} className="flex-1">

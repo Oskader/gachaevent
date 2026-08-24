@@ -26,7 +26,7 @@ const getSnapshot = () => navigator.onLine
 // mismatch cuando el cliente confirma que sí hay red.
 const getServerSnapshot = () => true
 
-export function OfflineBanner() {
+export function OfflineBanner({ label }: { label: string }) {
   const isOnline = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 
   if (isOnline) return null
@@ -36,7 +36,7 @@ export function OfflineBanner() {
       role="status"
       className="tabular border-b border-[var(--urgency-low)] bg-[var(--urgency-low)] px-4 py-1.5 text-center text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--ink)]"
     >
-      Sin conexión · viendo datos guardados
+      {label}
     </div>
   )
 }

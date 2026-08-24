@@ -4,8 +4,13 @@
  *   npm run dev                      # en otra terminal
  *   node scripts/run-scrapers.mjs
  *
- *   node scripts/run-scrapers.mjs --prod    # contra el despliegue de Vercel
- *   node scripts/run-scrapers.mjs honkai    # solo un juego
+ *   node scripts/run-scrapers.mjs --prod      # contra el despliegue de Vercel
+ *   node scripts/run-scrapers.mjs honkai      # solo un juego
+ *   node scripts/run-scrapers.mjs --dry-run   # hace el trabajo pero NO escribe
+ *
+ * El modo en seco descarga, parsea, describe y traduce, y en vez de guardar
+ * imprime lo que habria escrito. Es como se revisa una traduccion antes de
+ * que llegue a la base de datos.
  *
  * Lee CRON_SECRET de .env.local, que es lo que las rutas exigen en la
  * cabecera Authorization.
@@ -25,6 +30,7 @@ const env = Object.fromEntries(
 
 const args = process.argv.slice(2)
 const useProd = args.includes('--prod')
+const dryRun = args.includes('--dry-run')
 const base = useProd ? 'https://gachaevent.vercel.app' : 'http://localhost:3000'
 
 const ALL = ['honkai', 'zenless', 'wuthering', 'arknights']
@@ -43,11 +49,29 @@ let failed = 0
 for (const game of games) {
   const started = Date.now()
   try {
-    const res = await fetch(`${base}/api/cron/scrape-${game}`, {
+    const url = `${base}/api/cron/scrape-${game}${dryRun ? '?dryRun=1' : ''}`
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${env.CRON_SECRET}` },
     })
     const body = await res.json().catch(() => ({}))
     const secs = ((Date.now() - started) / 1000).toFixed(1)
+
+    if (res.ok && body.success && dryRun) {
+      console.log(
+        `  SECO ${game.padEnd(10)} ${String(body.rows?.length ?? 0).padStart(3)} filas` +
+          `  (${body.eventsTranslated ?? 0} traducidas ahora,` +
+          ` ${body.eventsExpired ?? 0} caducadas,` +
+          ` ${body.eventsWithoutDescription ?? 0} sin descripcion)  ${secs}s`
+      )
+      for (const r of body.rows ?? []) {
+        console.log(`
+    ${r.title}`)
+        console.log(`      EN: ${r.description_en ?? '(ninguna)'}`)
+        console.log(`      ES: ${r.description_es ?? '(ninguna)'}`)
+      }
+      console.log()
+      continue
+    }
 
     if (res.ok && body.success) {
       console.log(

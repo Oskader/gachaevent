@@ -2,11 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/page-header'
+import { getI18n } from '@/lib/i18n'
 import { countdownAt, requestNow, urgencyColor } from '@/lib/urgency'
 
 export const metadata: Metadata = { title: 'Juegos' }
 
 export default async function JuegosPage() {
+  const { t } = await getI18n()
   const supabase = await createClient()
   const now = requestNow()
 
@@ -35,12 +37,12 @@ export default async function JuegosPage() {
 
   return (
     <main className="mx-auto max-w-lg px-4 pb-10">
-      <PageHeader title="Juegos" meta={`${games?.length ?? 0} seguidos`} />
+      <PageHeader title={t.juegos.title} meta={`${games?.length ?? 0} ${t.juegos.tracked}`} />
 
       <ul className="border-t border-line">
         {games?.map((game) => {
           const stats = summary.get(game.id)
-          const cd = stats?.soonest ? countdownAt(stats.soonest, now) : null
+          const cd = stats?.soonest ? countdownAt(stats.soonest, now, t.urgency) : null
 
           return (
             <li key={game.id} className="border-b border-line">
@@ -60,8 +62,8 @@ export default async function JuegosPage() {
                   </p>
                   <p className="tabular mt-0.5 text-[11px] text-dim">
                     {stats?.count
-                      ? `${stats.count} ${stats.count === 1 ? 'evento activo' : 'eventos activos'}`
-                      : 'sin eventos activos'}
+                      ? `${stats.count} ${stats.count === 1 ? t.hoy.activeEvent : t.hoy.activeEvents}`
+                      : t.juegos.noActiveEvents}
                   </p>
                 </div>
 
@@ -72,7 +74,7 @@ export default async function JuegosPage() {
                   >
                     <span aria-hidden="true">{cd.label}</span>
                     <span className="sr-only">
-                      Próximo cierre: {cd.srLabel}
+                      {t.juegos.nextClosing}: {cd.srLabel}
                     </span>
                   </span>
                 )}

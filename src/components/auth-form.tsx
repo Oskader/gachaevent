@@ -8,13 +8,22 @@ import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
+import type { Dictionary } from '@/lib/i18n/shared'
+
 type Mode = 'login' | 'register'
 
 /**
  * Login y registro compartían ~120 líneas idénticas (campos, botón de
  * Google, toggle de contraseña). Una sola pieza con dos modos.
  */
-export function AuthForm({ mode }: { mode: Mode }) {
+export function AuthForm({
+  mode,
+  labels,
+}: {
+  mode: Mode
+  /** Textos del idioma activo, desde el servidor. */
+  labels: Dictionary['auth']
+}) {
   const isRegister = mode === 'register'
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -33,7 +42,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
     setLoading(true)
 
     if (isRegister && password !== confirm) {
-      toast.error('Las contraseñas no coinciden')
+      toast.error(labels.passwordMismatch)
       setLoading(false)
       return
     }
@@ -51,7 +60,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       // Antes se reportaba como error y el usuario se quedaba sin saber que
       // tenía que ir a su bandeja de entrada.
       if (!data.session) {
-        toast.success('Cuenta creada. Confirma tu correo para entrar.', {
+        toast.success(labels.accountCreatedConfirm, {
           description: `Te hemos enviado un enlace a ${email}.`,
           duration: 8000,
         })
@@ -59,7 +68,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         return
       }
 
-      toast.success('Cuenta creada')
+      toast.success(labels.accountCreated)
       router.push(next)
       router.refresh()
       return
@@ -71,7 +80,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       toast.error(
         error.message.includes('Email not confirmed')
           ? 'Todavía no has confirmado tu correo. Revisa tu bandeja de entrada.'
-          : 'Correo o contraseña incorrectos.'
+          : labels.badCredentials
       )
       setLoading(false)
       return
@@ -88,7 +97,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     })
-    if (error) toast.error('No se pudo abrir el acceso con Google')
+    if (error) toast.error(labels.googleFailed)
   }
 
   return (
@@ -96,21 +105,21 @@ export function AuthForm({ mode }: { mode: Mode }) {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field
           id="email"
-          label="Correo"
+          label={labels.email}
           type="email"
           value={email}
           onChange={setEmail}
-          placeholder="tu@correo.com"
+          placeholder={labels.emailPlaceholder}
           autoComplete="email"
         />
 
         <Field
           id="password"
-          label="Contraseña"
+          label={labels.password}
           type={showPassword ? 'text' : 'password'}
           value={password}
           onChange={setPassword}
-          placeholder="Mínimo 6 caracteres"
+          placeholder={labels.passwordPlaceholder}
           minLength={6}
           autoComplete={isRegister ? 'new-password' : 'current-password'}
           trailing={
@@ -132,11 +141,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
         {isRegister && (
           <Field
             id="confirm"
-            label="Repite la contraseña"
+            label={labels.confirmPassword}
             type={showPassword ? 'text' : 'password'}
             value={confirm}
             onChange={setConfirm}
-            placeholder="Mínimo 6 caracteres"
+            placeholder={labels.passwordPlaceholder}
             minLength={6}
             autoComplete="new-password"
           />
@@ -148,10 +157,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
           className="mt-1 w-full rounded-none bg-foreground py-5 text-sm font-semibold text-background hover:bg-foreground/85"
         >
           {loading
-            ? 'Un momento…'
+            ? labels.submitting
             : isRegister
-              ? 'Crear cuenta'
-              : 'Entrar'}
+              ? labels.submitRegister
+              : labels.submitLogin}
         </Button>
       </form>
 
@@ -159,7 +168,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         <span className="h-px flex-1 bg-line" />
         {/* Sin mayúsculas ni mono: la "O" de JetBrains Mono se confunde
             con un cero. */}
-        <span className="text-[11px] text-dim">o</span>
+        <span className="text-[11px] text-dim">{labels.or}</span>
         <span className="h-px flex-1 bg-line" />
       </div>
 
@@ -170,16 +179,16 @@ export function AuthForm({ mode }: { mode: Mode }) {
         className="w-full rounded-none border-line-strong py-5 text-sm hover:bg-panel"
       >
         <GoogleMark />
-        Continuar con Google
+        {labels.google}
       </Button>
 
       <p className="text-center text-xs text-dim">
-        {isRegister ? '¿Ya tienes cuenta? ' : '¿Todavía no tienes cuenta? '}
+        {isRegister ? labels.haveAccount : labels.noAccount}
         <Link
           href={isRegister ? '/login' : '/register'}
           className="text-foreground underline underline-offset-4 hover:text-[var(--urgency-low)]"
         >
-          {isRegister ? 'Inicia sesión' : 'Créala'}
+          {isRegister ? labels.goSignIn : labels.goRegister}
         </Link>
       </p>
     </div>

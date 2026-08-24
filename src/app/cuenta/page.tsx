@@ -3,10 +3,12 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/page-header'
 import { SignOutButton } from '@/components/ui/SignOutButton'
+import { getI18n } from '@/lib/i18n'
 
 export const metadata: Metadata = { title: 'Cuenta' }
 
 export default async function CuentaPage() {
+  const { locale, t } = await getI18n()
   const supabase = await createClient()
   const {
     data: { user },
@@ -15,20 +17,17 @@ export default async function CuentaPage() {
   if (!user) {
     return (
       <main className="mx-auto max-w-lg px-4 pb-10">
-        <PageHeader title="Cuenta" />
+        <PageHeader title={t.cuenta.title} />
         <div className="border border-line bg-panel px-5 py-8 text-center">
           <p className="mb-1 text-sm font-medium text-foreground">
-            No has iniciado sesión
+            {t.cuenta.signedOutTitle}
           </p>
-          <p className="mb-5 text-sm text-dim">
-            Tu progreso de endgame se guarda en tu cuenta y te sigue entre
-            dispositivos.
-          </p>
+          <p className="mb-5 text-sm text-dim">{t.cuenta.signedOutBody}</p>
           <Link
             href="/login?next=/cuenta"
             className="tabular text-xs uppercase tracking-[0.14em] text-foreground underline underline-offset-4 hover:text-[var(--urgency-low)]"
           >
-            Iniciar sesión
+            {t.cuenta.signIn}
           </Link>
         </div>
       </main>
@@ -43,14 +42,14 @@ export default async function CuentaPage() {
 
   return (
     <main className="mx-auto max-w-lg px-4 pb-10">
-      <PageHeader title="Cuenta" />
+      <PageHeader title={t.cuenta.title} />
 
       <dl className="border-y border-line">
-        <Row label="Correo" value={user.email ?? '—'} />
-        <Row label="Tareas completadas" value={String(count ?? 0)} />
+        <Row label={t.cuenta.email} value={user.email ?? '—'} />
+        <Row label={t.cuenta.tasksDone} value={String(count ?? 0)} />
         <Row
-          label="Cuenta creada"
-          value={new Date(user.created_at).toLocaleDateString('es', {
+          label={t.cuenta.createdAt}
+          value={new Date(user.created_at).toLocaleDateString(locale, {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -59,7 +58,7 @@ export default async function CuentaPage() {
       </dl>
 
       <div className="mt-6">
-        <SignOutButton />
+        <SignOutButton labels={t.cuenta} />
       </div>
     </main>
   )
