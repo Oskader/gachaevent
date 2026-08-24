@@ -38,7 +38,7 @@ const key = (t) =>
     .toLowerCase()
     .replace(/\s+\d{4}-\d{2}-\d{2}$/, '')
     .replace(/[^a-z0-9]+/g, ' ')
-    .replace(/\b(gifts?|events?)\b/g, '')
+    .replace(/\b(gift|event)s\b/g, '$1')
     .replace(/\s+/g, ' ')
     .trim()
 

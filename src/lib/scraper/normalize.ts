@@ -56,8 +56,11 @@ export function dedupKey(title: string): string {
   return cleanTitle(title)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
-    // "Gift"/"Gifts" y el sufijo "Event" son ruido para comparar.
-    .replace(/\b(gifts?|events?)\b/g, '')
+    // La misma wiki escribe "Marcel Anniversary Gift" y "...Gifts" para la
+    // misma cosa. Se normaliza el plural, pero NO se borra la palabra: si se
+    // borra, "Fate Gift" queda reducido a "fate" en un juego con una
+    // colaboración entera de Fate, y dos eventos distintos colisionan.
+    .replace(/\b(gift|event)s\b/g, '$1')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -67,16 +70,37 @@ export function dedupKey(title: string): string {
  * ocurrencias del mismo nombre. Nos quedamos con la que termina antes, que es
  * la que el jugador puede jugar ahora; la siguiente entrará sola cuando el
  * cron vuelva a correr y esta haya caducado.
+ *
+ * Con un matiz que costó ver: "la que termina antes" a secas elige una
+ * ocurrencia YA CADUCADA por encima de la viva, y como las tablas "Current" de
+ * las wikis se quedan desfasadas eso pasa de verdad. Una viva siempre gana a
+ * una muerta; solo entre iguales decide el cierre más próximo.
+ *
+ * `now` es obligatorio, igual que en `src/lib/urgency.ts`: nadie debe poder
+ * discrepar en silencio sobre qué hora es.
  */
 export function dedupeByTitle<T extends { title: string; end_date: string }>(
-  rows: T[]
+  rows: T[],
+  now: number
 ): T[] {
+  const isLive = (row: T) => Date.parse(row.end_date) > now
+
   const best = new Map<string, T>()
   for (const row of rows) {
     const key = dedupKey(row.title)
     if (!key) continue
+
     const prev = best.get(key)
-    if (!prev || row.end_date < prev.end_date) best.set(key, row)
+    if (!prev) {
+      best.set(key, row)
+      continue
+    }
+
+    if (isLive(row) !== isLive(prev)) {
+      if (isLive(row)) best.set(key, row)
+    } else if (row.end_date < prev.end_date) {
+      best.set(key, row)
+    }
   }
   return [...best.values()]
 }

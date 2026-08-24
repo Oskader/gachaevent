@@ -51,3 +51,40 @@ export async function fetchMediaWiki(url: string): Promise<FetchedPage> {
 
   return { html, sourceUrl: url }
 }
+
+/**
+ * Índice de secciones de una página, por nombre visible en minúsculas.
+ *
+ * Existe para no cablear números de sección. `&section=4` es cómodo hasta que
+ * la wiki inserta una sección más arriba: entonces el scraper lee otra cosa
+ * **en silencio**, porque la sección equivocada sí devuelve filas y el guard
+ * de "0 filas = error" nunca salta.
+ */
+export async function fetchSectionIndex(
+  sourceUrl: string
+): Promise<Map<string, string>> {
+  const url = `${sourceUrl}&prop=sections`
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent': 'GachaEventBot/1.0 (https://gachaevent.vercel.app)',
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+  })
+
+  if (!res.ok) {
+    throw new Error(`MediaWiki sections fetch failed: ${res.status} ${res.statusText}`)
+  }
+
+  const json = await res.json()
+  if (json?.error) {
+    throw new Error(`MediaWiki API error: ${json.error.code} — ${json.error.info}`)
+  }
+
+  const sections: { index?: string; line?: string }[] = json?.parse?.sections ?? []
+  return new Map(
+    sections
+      .filter((s) => s.index && s.line)
+      .map((s) => [s.line!.trim().toLowerCase(), s.index!])
+  )
+}

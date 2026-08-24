@@ -79,7 +79,12 @@ function tidy(text: string): string {
  */
 function scrubBlob(text: string): string {
   return text
-    .replace(/[A-Za-z]*\s*Ends?\s+in:\s*/gi, ' ')
+    .replace(/[A-Za-z]*\s*(?:Ends?|Starts?|Begins?)\s+in:\s*/gi, ' ')
+    // La fecha larga que el contador deja detrás, ya sin su etiqueta.
+    .replace(
+      /[A-Z][a-z]+\s+\d{1,2},\s*\d{4}\s+\d{1,2}:\d{2}:\d{2}\s*(?:AM|PM)?\s*UTC/gi,
+      ' '
+    )
     // Bloques de horario del infobox de wiki.gg, que no es una <table>:
     // "Server 2026/08/19 12:00 – 2026/09/03 06:00 (UTC+8)"
     .replace(/(?:Americas?|Europe|Asia|Global)?\s*Server\s*/gi, ' ')
@@ -93,6 +98,9 @@ function scrubBlob(text: string): string {
 
 /** Una frase que define o explica, no una cita de ambientación. */
 const EXPLANATORY = /\b(is|are)\s(a|an|the)\b|\bDuring\b|\ballows?\b|\bprovides?\b|\bfeatures?\b|\bplayers? can\b|\brewards?\b/i
+
+/** Separadores de subtitulo: "Shiyu Defense: Critical Node". */
+const SEPARATORS = /[:\u2013\u2014]/
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
@@ -108,11 +116,21 @@ const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
  */
 function sliceAtSubject(blob: string, title?: string): string | null {
   if (!title) return null
-  const candidates = [title, title.split(/[:–—-]/)[0].trim()].filter(
+
+  // Además del nombre entero, sus dos mitades. La wiki titula la página
+  // "Shiyu Defense: Critical Node" pero la redacta como "The Critical Node
+  // is a recurring...", así que sin el segmento de la derecha el anclaje
+  // falla y el texto se queda las etiquetas de pestaña delante.
+  const segments = title.split(SEPARATORS).map((t) => t.trim())
+  const candidates = [title, segments[0], segments[segments.length - 1]].filter(
     (t, i, all) => t.length > 3 && all.indexOf(t) === i
   )
+
   for (const name of candidates) {
-    const match = blob.match(new RegExp(`${escapeRegex(name)}\\s+(?:is|are|was)\\b`, 'i'))
+    // El artículo delante es parte de la frase, no ruido: se conserva si está.
+    const match = blob.match(
+      new RegExp(`(?:The\\s+)?${escapeRegex(name)}\\s+(?:is|are|was)\\b`, 'i')
+    )
     if (match?.index !== undefined) return blob.slice(match.index)
   }
   return null

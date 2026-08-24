@@ -26,9 +26,13 @@ export interface GameSource {
   sourceUrl: string
   /**
    * Secciones a pedir por separado (solo endfield-cards: su lista no es una
-   * tabla, así que se piden las secciones Ongoing y Upcoming por índice).
+   * tabla, así que se piden las secciones Ongoing y Upcoming sueltas).
+   *
+   * Por NOMBRE, no por índice: el índice se resuelve en cada pasada contra
+   * `prop=sections`. Cablearlo hacía que insertar una sección en la wiki
+   * desviara el scraper a otro contenido sin dar error.
    */
-  sections?: { index: number; label: string }[]
+  sections?: string[]
   /** Página legible por humanos, para guardar como referencia en la fila. */
   humanUrl: string
   /** Host de la wiki, para ir a buscar la descripción a la página del evento. */
@@ -71,10 +75,7 @@ export const SOURCES: Record<string, GameSource> = {
     // endfield.wiki.gg, NO arknights.wiki.gg: ese segundo es el Arknights
     // original de tower defense, un juego distinto.
     sourceUrl: 'https://endfield.wiki.gg/api.php?action=parse&page=Event&format=json',
-    sections: [
-      { index: 3, label: 'Current' },
-      { index: 4, label: 'Upcoming' },
-    ],
+    sections: ['Ongoing', 'Upcoming'],
     humanUrl: 'https://endfield.wiki.gg/wiki/Event',
     wikiHost: 'endfield.wiki.gg',
   },
