@@ -1,4 +1,4 @@
-// RLS Policies + Trigger + Seed for GachaDash
+// RLS Policies + Trigger + Seed for GachaEvent
 async function runSQL(name, sql) {
   console.log(`\n=== Running: ${name} ===`);
   const res = await fetch('https://api.supabase.com/v1/projects/vubovpxyuxnrjytmrshw/database/query', {

@@ -17,7 +17,7 @@ export interface FetchedPage {
 export async function fetchMediaWiki(url: string): Promise<FetchedPage> {
   const res = await fetch(url, {
     headers: {
-      'User-Agent': 'GachaDashBot/1.0 (https://gachadash.vercel.app)',
+      'User-Agent': 'GachaEventBot/1.0 (https://gachaevent.vercel.app)',
       Accept: 'application/json',
     },
     cache: 'no-store',

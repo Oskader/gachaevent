@@ -52,7 +52,7 @@ async function main() {
   ])
 
   const now = new Date().toISOString()
-  console.log(`GachaDash — estado de datos · ${now.slice(0, 16).replace('T', ' ')} UTC\n`)
+  console.log(`GachaEvent — estado de datos · ${now.slice(0, 16).replace('T', ' ')} UTC\n`)
 
   let problems = 0
 

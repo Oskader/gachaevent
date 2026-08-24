@@ -1,11 +1,11 @@
 {
-  "name": "GachaDash",
-  "short_name": "GachaDash",
+  "name": "GachaEvent",
+  "short_name": "GachaEvent",
   "description": "Tu Centro de Eventos Gacha",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0F0F23",
-  "theme_color": "#7C3AED",
+  "background_color": "#0a0c11",
+  "theme_color": "#0a0c11",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",

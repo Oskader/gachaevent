@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 /**
  * Cabecera de pantalla. La marca no ocupa una barra fija propia: el título
- * de la pantalla es lo que orienta, y GachaDash se firma en pequeño al lado.
+ * de la pantalla es lo que orienta, y GachaEvent se firma en pequeño al lado.
  * Así se recupera altura útil en móvil, que es donde se usa esto.
  */
 export function PageHeader({
@@ -21,7 +21,7 @@ export function PageHeader({
           href="/hoy"
           className="tabular text-[10px] uppercase tracking-[0.24em] text-dim transition-colors hover:text-foreground"
         >
-          GachaDash
+          GachaEvent
         </Link>
         {meta && (
           <span className="tabular text-[10px] uppercase tracking-[0.14em] text-dim">

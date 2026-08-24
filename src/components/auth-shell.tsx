@@ -16,7 +16,7 @@ export function AuthShell({
         href="/"
         className="tabular mb-10 text-[10px] uppercase tracking-[0.24em] text-dim transition-colors hover:text-foreground"
       >
-        GachaDash
+        GachaEvent
       </Link>
 
       <h1 className="mb-2 text-2xl font-bold tracking-tight text-foreground">

@@ -16,7 +16,7 @@ export default async function LandingPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center px-6 py-16">
       <p className="tabular mb-10 text-[10px] uppercase tracking-[0.24em] text-dim">
-        GachaDash
+        GachaEvent
       </p>
 
       {/* La tesis de la app, dicha con el mismo lenguaje visual que usa
@@ -30,7 +30,7 @@ export default async function LandingPage() {
       </h1>
 
       <p className="mb-12 max-w-sm text-sm leading-relaxed text-dim">
-        GachaDash reúne los eventos de tiempo limitado de Honkai: Star Rail,
+        GachaEvent reúne los eventos de tiempo limitado de Honkai: Star Rail,
         Wuthering Waves, Zenless Zone Zero y Arknights: Endfield en una sola
         lista, ordenada por lo que vence antes.
       </p>

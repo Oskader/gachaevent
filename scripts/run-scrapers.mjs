@@ -25,7 +25,7 @@ const env = Object.fromEntries(
 
 const args = process.argv.slice(2)
 const useProd = args.includes('--prod')
-const base = useProd ? 'https://gachadash.vercel.app' : 'http://localhost:3000'
+const base = useProd ? 'https://gachaevent.vercel.app' : 'http://localhost:3000'
 
 const ALL = ['honkai', 'zenless', 'wuthering', 'arknights']
 const picked = args.filter((a) => ALL.includes(a))

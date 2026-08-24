@@ -1,4 +1,4 @@
-// Migration runner for GachaDash Supabase schema
+// Migration runner for GachaEvent Supabase schema
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://vubovpxyuxnrjytmrshw.supabase.co';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'REMOVED_SECRET';
 

@@ -11,7 +11,7 @@ import * as cheerio from 'cheerio'
  * puede pedir el resumen por API: hay que sacar el texto de cabecera del HTML.
  */
 
-const UA = 'GachaDashBot/1.0 (https://gachadash.vercel.app)'
+const UA = 'GachaEventBot/1.0 (https://gachaevent.vercel.app)'
 
 /** Cuántas páginas se piden a la vez. Suficiente para no tardar y no abusar. */
 const CONCURRENCY = 5

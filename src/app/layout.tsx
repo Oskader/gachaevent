@@ -28,19 +28,19 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "GachaDash — cuánto te queda",
-    template: "%s · GachaDash",
+    default: "GachaEvent — cuánto te queda",
+    template: "%s · GachaEvent",
   },
   description:
     "Eventos de tiempo limitado y checklist de endgame de Honkai: Star Rail, Wuthering Waves, Zenless Zone Zero y Arknights: Endfield, ordenados por lo que vence antes.",
-  applicationName: "GachaDash",
+  applicationName: "GachaEvent",
   // El manifest existía en public/ pero no lo enlazaba nadie, así que la
   // PWA no era instalable.
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "GachaDash",
+    title: "GachaEvent",
   },
 };
 

@@ -1,13 +1,13 @@
-# 🔐 Guía: Configuración de Google OAuth para GachaDash
+# 🔐 Guía: Configuración de Google OAuth para GachaEvent
 
-Esta guía te llevará paso a paso para habilitar el botón **"Continuar con Google"** en GachaDash, conectando Google Cloud Console con Supabase Auth.
+Esta guía te llevará paso a paso para habilitar el botón **"Continuar con Google"** en GachaEvent, conectando Google Cloud Console con Supabase Auth.
 
 ---
 
 ## Requisitos Previos
 
 - Una cuenta de Google (la misma que uses para desarrollo)
-- Acceso al [Dashboard de Supabase](https://supabase.com/dashboard) de tu proyecto GachaDash
+- Acceso al [Dashboard de Supabase](https://supabase.com/dashboard) de tu proyecto GachaEvent
 - Tu URL de Supabase (la encuentras en **Settings → API** de tu proyecto)
 
 ---
@@ -16,7 +16,7 @@ Esta guía te llevará paso a paso para habilitar el botón **"Continuar con Goo
 
 1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
 2. Haz clic en el selector de proyectos (parte superior izquierda) → **"Nuevo Proyecto"**
-3. Nombra el proyecto: `GachaDash` (o el nombre que prefieras)
+3. Nombra el proyecto: `GachaEvent` (o el nombre que prefieras)
 4. Haz clic en **"Crear"** y espera a que se cree
 5. Asegúrate de tener seleccionado el proyecto recién creado
 
@@ -30,7 +30,7 @@ Esta guía te llevará paso a paso para habilitar el botón **"Continuar con Goo
 
 | Campo | Valor |
 |-------|-------|
-| **App name** | `GachaDash` |
+| **App name** | `GachaEvent` |
 | **User support email** | Tu email |
 | **Developer contact email** | Tu email |
 
@@ -63,7 +63,7 @@ Esta guía te llevará paso a paso para habilitar el botón **"Continuar con Goo
 | Campo | Valor |
 |-------|-------|
 | **Application type** | `Web application` |
-| **Name** | `GachaDash Web Client` |
+| **Name** | `GachaEvent Web Client` |
 
 ### Authorized JavaScript Origins
 
@@ -90,7 +90,7 @@ https://tu-dominio-de-produccion.vercel.app
 ## Paso 4: Conectar Google OAuth con Supabase
 
 1. Ve al [Dashboard de Supabase](https://supabase.com/dashboard)
-2. Selecciona tu proyecto GachaDash
+2. Selecciona tu proyecto GachaEvent
 3. Navega a **Authentication → Providers**
 4. Busca **Google** en la lista y haz clic para expandirlo
 5. Activa el toggle **"Enable Sign in with Google"**
