@@ -15,6 +15,12 @@ interface Props {
   words: UrgencyWords
   /** Plantilla "y {n} más" del corte de recompensas. */
   andMore: string
+  /**
+   * La fila va en la sección de futuro: la cuenta atrás mira al arranque y
+   * no al final. Lo decide la página, que es quien tiene el `now` de la
+   * petición; aquí no se lee el reloj.
+   */
+  upcoming?: boolean
 }
 
 /**
@@ -31,6 +37,7 @@ export function EventRow({
   locale,
   words,
   andMore,
+  upcoming = false,
 }: Props) {
   const rewards = event.rewards as { items?: string[] } | null
   const items = rewards?.items ?? []
@@ -58,7 +65,12 @@ export function EventRow({
         <h3 className="flex-1 text-sm font-semibold leading-snug text-foreground">
           {event.title}
         </h3>
-        <CountdownLabel endDate={event.end_date} className="shrink-0" words={words} />
+        <CountdownLabel
+          startDate={upcoming ? event.start_date : undefined}
+          endDate={event.end_date}
+          className="shrink-0"
+          words={words}
+        />
       </div>
 
       {description && (

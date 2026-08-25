@@ -3,7 +3,7 @@
 import { useClock } from '@/lib/use-clock'
 import {
   burnedFraction,
-  countdownAt,
+  timelineAt,
   urgencyColor,
   type UrgencyWords,
 } from '@/lib/urgency'
@@ -18,11 +18,28 @@ import {
  * `now === 0` significa "todavía no montado en cliente".
  */
 
+/**
+ * Marca neutra de "empieza en", para no romper la regla de que el texto
+ * VISIBLE de la cuenta atrás no cambia de idioma. La frase entera va en la
+ * etiqueta del lector de pantalla, que sí está traducida.
+ */
+const STARTS_IN = '→ '
+
 export function CountdownLabel({
+  startDate,
   endDate,
   className = '',
   words,
 }: {
+  /**
+   * Solo lo pasan las filas que la página ya clasificó como futuras. Con él,
+   * la etiqueta cuenta hasta el ARRANQUE en vez de hasta el final; sin él se
+   * comporta igual que siempre.
+   *
+   * Se sigue recalculando la fase en cliente para que un evento que arranca
+   * con la pestaña abierta pase solo a contar hasta su final.
+   */
+  startDate?: string
   endDate: string
   className?: string
   /**
@@ -41,12 +58,12 @@ export function CountdownLabel({
         className={`tabular text-sm text-transparent ${className}`}
         aria-hidden="true"
       >
-        00d 00h
+        {startDate ? `${STARTS_IN}00d 00h` : '00d 00h'}
       </span>
     )
   }
 
-  const cd = countdownAt(endDate, now, words)
+  const cd = timelineAt(startDate, endDate, now, words)
 
   if (cd.level === 'ended') {
     return (
@@ -61,7 +78,9 @@ export function CountdownLabel({
       className={`tabular text-sm font-medium ${className}`}
       style={{ color: urgencyColor(cd.level) }}
     >
-      <span aria-hidden="true">{cd.label}</span>
+      <span aria-hidden="true">
+        {cd.phase === 'upcoming' ? `${STARTS_IN}${cd.label}` : cd.label}
+      </span>
       <span className="sr-only">{cd.srLabel}</span>
     </span>
   )
@@ -83,8 +102,11 @@ export function Fuse({
 }) {
   const now = useClock()
 
+  // `timelineAt` y no `countdownAt`: un evento que empieza dentro de tres
+  // días y dura uno tenía la mecha vacía pero teñida de naranja, como si se
+  // estuviera agotando.
   const burned = now === 0 ? 0 : burnedFraction(startDate, endDate, now)
-  const level = now === 0 ? 'none' : countdownAt(endDate, now).level
+  const level = now === 0 ? 'none' : timelineAt(startDate, endDate, now).level
 
   return (
     <div className={`fuse ${className}`} role="presentation">

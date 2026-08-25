@@ -8,6 +8,17 @@
 
 export type UrgencyLevel = 'none' | 'low' | 'mid' | 'high' | 'ended'
 
+/**
+ * En qué momento de su propia ventana está el evento.
+ *
+ * Hace falta porque las wikis listan también lo que **todavía no ha
+ * empezado** (la sección `Upcoming`), y una fila así contada como activa
+ * miente dos veces: aparece entre lo que se te está acabando, y su cuenta
+ * atrás es la de su final, no la de su llegada. Planar Fissure dura 14 días
+ * y salía marcando 27.
+ */
+export type EventPhase = 'upcoming' | 'live' | 'ended'
+
 const HOUR = 60 * 60 * 1000
 const DAY = 24 * HOUR
 
@@ -74,6 +85,10 @@ export interface UrgencyWords {
   lessThanHour: string
   day: string
   days: string
+  /** Cuenta atrás hasta el ARRANQUE, para lo que aún no ha empezado. */
+  startsInDays: string
+  startsInHours: string
+  startsInSoon: string
 }
 
 const DEFAULT_WORDS: UrgencyWords = {
@@ -83,6 +98,9 @@ const DEFAULT_WORDS: UrgencyWords = {
   lessThanHour: 'Quedan menos de una hora',
   day: 'día',
   days: 'días',
+  startsInDays: 'Empieza en {d} {dayWord} y {h} h',
+  startsInHours: 'Empieza en {h} h',
+  startsInSoon: 'Empieza en menos de una hora',
 }
 
 function srFormat(remainingMs: number, w: UrgencyWords): string {
@@ -97,6 +115,19 @@ function srFormat(remainingMs: number, w: UrgencyWords): string {
   }
   if (hours > 0) return w.withHours.replace('{h}', String(hours))
   return w.lessThanHour
+}
+
+function startFormat(remainingMs: number, w: UrgencyWords): string {
+  const days = Math.floor(remainingMs / DAY)
+  const hours = Math.floor((remainingMs % DAY) / HOUR)
+  if (days > 0) {
+    return w.startsInDays
+      .replace('{d}', String(days))
+      .replace('{dayWord}', days === 1 ? w.day : w.days)
+      .replace('{h}', String(hours))
+  }
+  if (hours > 0) return w.startsInHours.replace('{h}', String(hours))
+  return w.startsInSoon
 }
 
 /**
@@ -116,6 +147,63 @@ export function countdownAt(
     remaining,
     label: formatRemaining(remaining),
     srLabel: srFormat(remaining, words),
+  }
+}
+
+/**
+ * Fase del evento respecto a `now`.
+ *
+ * Una fecha ilegible cae en 'live': la fila se ve con su cuenta atrás en vez
+ * de esconderse en una sección de futuro que nunca llegaría.
+ */
+export function phaseAt(
+  startDate: string | null | undefined,
+  endDate: string,
+  now: number
+): EventPhase {
+  const end = Date.parse(endDate)
+  if (!Number.isNaN(end) && end <= now) return 'ended'
+  // Sin fecha de inicio no se puede afirmar que algo esté por llegar, así que
+  // se trata como en marcha. Al revés se escondería en una sección de futuro
+  // de la que no saldría nunca.
+  if (!startDate) return 'live'
+  const start = Date.parse(startDate)
+  if (!Number.isNaN(start) && start > now) return 'upcoming'
+  return 'live'
+}
+
+export interface Timeline extends Countdown {
+  phase: EventPhase
+}
+
+/**
+ * Cuenta atrás consciente de la fase: hasta el final si el evento está en
+ * marcha, hasta el arranque si todavía no ha empezado.
+ *
+ * Lo que aún no ha empezado sale SIEMPRE en gris, y eso no es un descuido:
+ * el color saturado de esta app significa "se te acaba", y a un evento que
+ * no ha llegado no se le acaba nada. Pintar de rojo algo que empieza en diez
+ * horas rompería la única regla que sostiene el sistema visual.
+ */
+export function timelineAt(
+  startDate: string | null | undefined,
+  endDate: string,
+  now: number,
+  words: UrgencyWords = DEFAULT_WORDS
+): Timeline {
+  const phase = phaseAt(startDate, endDate, now)
+
+  if (phase !== 'upcoming' || !startDate) {
+    return { phase, ...countdownAt(endDate, now, words) }
+  }
+
+  const remaining = Math.max(0, Date.parse(startDate) - now)
+  return {
+    phase,
+    level: 'none',
+    remaining,
+    label: formatRemaining(remaining),
+    srLabel: startFormat(remaining, words),
   }
 }
 

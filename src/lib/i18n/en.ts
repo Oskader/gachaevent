@@ -36,6 +36,8 @@ export const en: Dictionary = {
     nothingSoon: 'Nothing expires in the next 12 hours.',
     thisWeek: 'This week',
     later: 'Later',
+    upcoming: 'Coming up',
+    upcomingNote: 'Announced but not live yet.',
     activeEvent: 'active event',
     activeEvents: 'active events',
     emptyTitle: 'No active events',
@@ -48,6 +50,9 @@ export const en: Dictionary = {
     title: 'Games',
     tracked: 'tracked',
     noActiveEvents: 'no active events',
+    // En inglés no cambia con el número; se repite para no partir el tipo.
+    upcomingCountOne: '{n} coming up',
+    upcomingCount: '{n} coming up',
     nextClosing: 'Next closing',
   },
 
@@ -55,6 +60,10 @@ export const en: Dictionary = {
     notFound: 'Game not found',
     metaDescription: 'Active events and endgame checklist for {game}.',
     eventsHeading: 'Events',
+    upcomingHeading: 'Coming up',
+    upcomingNote: 'Announced but not live yet.',
+    activeOne: 'active',
+    activeMany: 'active',
     noEvents: 'No active events right now. The scraper checks the wiki every morning.',
     checklistEmpty: 'There are no endgame tasks for this game yet.',
     signInLink: 'Sign in',
@@ -144,5 +153,8 @@ export const en: Dictionary = {
     lessThanHour: 'Less than an hour left',
     day: 'day',
     days: 'days',
+    startsInDays: 'Starts in {d} {dayWord} and {h} h',
+    startsInHours: 'Starts in {h} h',
+    startsInSoon: 'Starts in less than an hour',
   },
 }

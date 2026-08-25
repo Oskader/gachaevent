@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/page-header'
 import { getI18n } from '@/lib/i18n'
-import { countdownAt, requestNow, urgencyColor } from '@/lib/urgency'
+import { countdownAt, phaseAt, requestNow, urgencyColor } from '@/lib/urgency'
 
 export const metadata: Metadata = { title: 'Juegos' }
 
@@ -19,18 +19,32 @@ export default async function JuegosPage() {
       .order('name'),
     supabase
       .from('events')
-      .select('game_id, end_date')
+      .select('game_id, start_date, end_date')
       .eq('is_active', true)
       .gte('end_date', new Date(now).toISOString()),
   ])
 
   // Un juego no se resume por su icono, se resume por lo que se te escapa.
-  const summary = new Map<string, { count: number; soonest: string | null }>()
+  //
+  // Lo que aún no ha empezado se cuenta aparte y NO entra en el próximo
+  // cierre: un evento anunciado que dura dos días puede acabar antes que uno
+  // en marcha, y entonces la cifra grande de la derecha anunciaba un plazo
+  // que todavía no corre.
+  const summary = new Map<
+    string,
+    { count: number; upcoming: number; soonest: string | null }
+  >()
   for (const event of events ?? []) {
-    const entry = summary.get(event.game_id) ?? { count: 0, soonest: null }
-    entry.count += 1
-    if (!entry.soonest || event.end_date < entry.soonest) {
-      entry.soonest = event.end_date
+    const entry =
+      summary.get(event.game_id) ?? { count: 0, upcoming: 0, soonest: null }
+
+    if (phaseAt(event.start_date, event.end_date, now) === 'upcoming') {
+      entry.upcoming += 1
+    } else {
+      entry.count += 1
+      if (!entry.soonest || event.end_date < entry.soonest) {
+        entry.soonest = event.end_date
+      }
     }
     summary.set(event.game_id, entry)
   }
@@ -64,6 +78,12 @@ export default async function JuegosPage() {
                     {stats?.count
                       ? `${stats.count} ${stats.count === 1 ? t.hoy.activeEvent : t.hoy.activeEvents}`
                       : t.juegos.noActiveEvents}
+                    {stats?.upcoming
+                      ? ` · ${(stats.upcoming === 1
+                          ? t.juegos.upcomingCountOne
+                          : t.juegos.upcomingCount
+                        ).replace('{n}', String(stats.upcoming))}`
+                      : ''}
                   </p>
                 </div>
 

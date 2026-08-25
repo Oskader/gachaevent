@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { EventRow } from '@/components/event-row'
 import { PageHeader } from '@/components/page-header'
-import { countdownAt, requestNow } from '@/lib/urgency'
+import { countdownAt, phaseAt, requestNow } from '@/lib/urgency'
 import { getI18n, type Dictionary, type Locale } from '@/lib/i18n'
 import type { Database } from '@/lib/supabase/types'
 
@@ -32,16 +32,26 @@ export default async function HoyPage() {
 
   const rows = data ?? []
 
-  // Corte por urgencia, no por juego: la pregunta de esta pantalla es
+  // Primer corte: lo que ya está en marcha contra lo que solo está anunciado.
+  // Las wikis listan las dos cosas y mezclarlas confunde de dos maneras — un
+  // evento futuro se colaba entre los urgentes, y su cuenta atrás era la de su
+  // final, así que uno de 14 días marcaba 27.
+  const live = rows.filter((e) => phaseAt(e.start_date, e.end_date, now) === 'live')
+  const upcoming = rows
+    .filter((e) => phaseAt(e.start_date, e.end_date, now) === 'upcoming')
+    // Aquí ordena la llegada, no el cierre: es la pregunta de esta sección.
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))
+
+  // Segundo corte por urgencia, no por juego: la pregunta de esta pantalla es
   // "¿qué se me escapa?", y eso no entiende de franquicias.
   const byLevel = (levels: string[]) =>
-    rows.filter((e) => levels.includes(countdownAt(e.end_date, now).level))
+    live.filter((e) => levels.includes(countdownAt(e.end_date, now).level))
 
   return (
     <main className="mx-auto max-w-lg px-4 pb-10">
       <PageHeader
         title={t.hoy.title}
-        meta={`${rows.length} ${rows.length === 1 ? t.hoy.activeEvent : t.hoy.activeEvents}`}
+        meta={`${live.length} ${live.length === 1 ? t.hoy.activeEvent : t.hoy.activeEvents}`}
       />
 
       {rows.length === 0 ? (
@@ -70,6 +80,15 @@ export default async function HoyPage() {
             words={t.urgency}
             andMore={t.event.andMore}
           />
+          <Group
+            label={t.hoy.upcoming}
+            note={t.hoy.upcomingNote}
+            events={upcoming}
+            upcoming
+            locale={locale}
+            words={t.urgency}
+            andMore={t.event.andMore}
+          />
         </div>
       )}
     </main>
@@ -78,15 +97,20 @@ export default async function HoyPage() {
 
 function Group({
   label,
+  note,
   events,
   emptyNote,
+  upcoming = false,
   locale,
   words,
   andMore,
 }: {
   label: string
+  /** Aclaración bajo el título, cuando la sección la necesita. */
+  note?: string
   events: EventWithGame[]
   emptyNote?: string
+  upcoming?: boolean
   locale: Locale
   words: Dictionary['urgency']
   andMore: string
@@ -96,6 +120,9 @@ function Group({
   return (
     <section>
       <h2 className="eyebrow mb-3">{label}</h2>
+      {note && events.length > 0 && (
+        <p className="-mt-1 mb-3 text-xs text-[var(--text-faint)]">{note}</p>
+      )}
       {events.length === 0 ? (
         <p className="text-sm text-dim">{emptyNote}</p>
       ) : (
@@ -106,6 +133,7 @@ function Group({
               event={event}
               accentColor={event.games?.color_accent ?? 'var(--urgency-none)'}
               gameName={event.games?.name}
+              upcoming={upcoming}
               locale={locale}
               words={words}
               andMore={andMore}

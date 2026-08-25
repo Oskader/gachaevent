@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/page-header'
 import { EventRow } from '@/components/event-row'
 import { ChecklistSection } from './components/ChecklistSection'
 import { getI18n } from '@/lib/i18n'
+import { phaseAt, requestNow } from '@/lib/urgency'
 import type { Database } from '@/lib/supabase/types'
 
 interface Props {
@@ -41,6 +42,7 @@ export default async function GamePage({ params }: Props) {
   const { game: gameSlug } = await params
   const { locale, t } = await getI18n()
   const supabase = await createClient()
+  const now = requestNow()
 
   const game = await getGame(gameSlug)
   if (!game) notFound()
@@ -51,7 +53,7 @@ export default async function GamePage({ params }: Props) {
       .select('*')
       .eq('game_id', game.id)
       .eq('is_active', true)
-      .gte('end_date', new Date().toISOString())
+      .gte('end_date', new Date(now).toISOString())
       .order('end_date', { ascending: true })
       .limit(20),
     supabase
@@ -61,14 +63,26 @@ export default async function GamePage({ params }: Props) {
       .order('sort_order'),
   ])
 
-  const activeEvents = events ?? []
+  const rows = events ?? []
+
+  // Lo anunciado va aparte de lo que ya se puede jugar. La wiki lista las dos
+  // cosas en la misma tabla y sin separarlas la cabecera contaba como activos
+  // eventos que aún no han llegado.
+  const activeEvents = rows.filter(
+    (e) => phaseAt(e.start_date, e.end_date, now) === 'live'
+  )
+  const upcomingEvents = rows
+    .filter((e) => phaseAt(e.start_date, e.end_date, now) === 'upcoming')
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))
 
   return (
     <main className="mx-auto max-w-lg px-4 pb-10">
       <PageHeader
         title={game.name}
         accentColor={game.color_accent}
-        meta={`${activeEvents.length} ${activeEvents.length === 1 ? 'activo' : 'activos'}`}
+        meta={`${activeEvents.length} ${
+          activeEvents.length === 1 ? t.game.activeOne : t.game.activeMany
+        }`}
       />
 
       <div className="space-y-9">
@@ -91,6 +105,28 @@ export default async function GamePage({ params }: Props) {
             </div>
           )}
         </section>
+
+        {upcomingEvents.length > 0 && (
+          <section>
+            <h2 className="eyebrow mb-3">{t.game.upcomingHeading}</h2>
+            <p className="-mt-1 mb-3 text-xs text-[var(--text-faint)]">
+              {t.game.upcomingNote}
+            </p>
+            <div>
+              {upcomingEvents.map((event) => (
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  accentColor={game.color_accent}
+                  upcoming
+                  locale={locale}
+                  words={t.urgency}
+                  andMore={t.event.andMore}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <ChecklistSection
           items={checklistItems ?? []}

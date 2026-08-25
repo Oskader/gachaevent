@@ -39,6 +39,8 @@ export const es = {
     nothingSoon: 'Nada vence en las próximas 12 horas.',
     thisWeek: 'Esta semana',
     later: 'Más adelante',
+    upcoming: 'Próximamente',
+    upcomingNote: 'Anunciados pero todavía no disponibles.',
     activeEvent: 'evento activo',
     activeEvents: 'eventos activos',
     emptyTitle: 'No hay eventos activos',
@@ -51,6 +53,8 @@ export const es = {
     title: 'Juegos',
     tracked: 'seguidos',
     noActiveEvents: 'sin eventos activos',
+    upcomingCountOne: '{n} próximo',
+    upcomingCount: '{n} próximos',
     nextClosing: 'Próximo cierre',
   },
 
@@ -58,6 +62,10 @@ export const es = {
     notFound: 'Juego no encontrado',
     metaDescription: 'Eventos activos y checklist de endgame de {game}.',
     eventsHeading: 'Eventos',
+    upcomingHeading: 'Próximamente',
+    upcomingNote: 'Anunciados pero todavía no disponibles.',
+    activeOne: 'activo',
+    activeMany: 'activos',
     noEvents: 'No hay eventos activos ahora mismo. El scraper revisa la wiki cada mañana.',
     checklistEmpty: 'Todavía no hay tareas de endgame para este juego.',
     signInLink: 'Inicia sesión',
@@ -155,6 +163,9 @@ export const es = {
     lessThanHour: 'Quedan menos de una hora',
     day: 'día',
     days: 'días',
+    startsInDays: 'Empieza en {d} {dayWord} y {h} h',
+    startsInHours: 'Empieza en {h} h',
+    startsInSoon: 'Empieza en menos de una hora',
   },
 }
 
