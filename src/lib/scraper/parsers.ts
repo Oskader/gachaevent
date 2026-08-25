@@ -28,6 +28,14 @@ export interface ParsedEvent {
    * Es lo que permite ir a buscar la descripción a su propia página.
    */
   pageTitle?: string
+  /**
+   * Banner del evento, tal cual lo trae la propia lista.
+   *
+   * Sale del mismo HTML que el título y las fechas: no cuesta ninguna
+   * petición. `undefined` cuando la wiki no tiene la imagen subida — pasa de
+   * verdad, y `mw-broken-media` no emite `<img>`, así que cae solo.
+   */
+  image_url?: string
 }
 
 /** El enlace de la celda apunta a la página del evento; File: y rojos no valen. */
@@ -45,6 +53,55 @@ function pageTitleFromCell($: cheerio.CheerioAPI, td: unknown): string | undefin
 
   const title = (link.attr('title') ?? '').trim()
   return title || undefined
+}
+
+/**
+ * Ancho al que se piden las miniaturas.
+ *
+ * La fila las dibuja a 96 CSS px, que en pantalla de densidad doble son 192
+ * reales. 480 deja margen sin pedir el original entero.
+ */
+const THUMB_WIDTH = 480
+
+/**
+ * URL absoluta y a resolución utilizable.
+ *
+ * Fandom sirve por `scale-to-width-down/<n>` y Wuthering entrega 200 px, que
+ * se ve blando al doble de densidad; por eso se reescribe el ancho.
+ *
+ * Endfield NO usa ese formato —su ruta es `/images/thumb/<f>/480px-<f>`, ya a
+ * 480— pero SÍ la devuelve relativa, así que lo único que necesita es el host
+ * delante. Sin eso la URL guardada es inservible.
+ */
+function absoluteImageUrl(src: string, host?: string): string | undefined {
+  if (src.startsWith('//')) return `https:${src}`
+  if (src.startsWith('/')) return host ? `https://${host}${src}` : undefined
+  return src.replace(/\/scale-to-width-down\/\d+/, `/scale-to-width-down/${THUMB_WIDTH}`)
+}
+
+/**
+ * Primera imagen real de un contenedor.
+ *
+ * Comprobado el 2026-08-25 contra las cuatro wikis: `action=parse` SÍ trae
+ * `data-src` en la mayoría de filas — solo las primeras de cada tabla llegan
+ * sin la clase `lazyload`. Fandom marca esas filas con
+ * `class="mw-file-element lazyload"` y deja en `src` un GIF de 1×1 en
+ * `data:` puro; la URL real vive en `data-src`. Por eso NO basta con
+ * `src ?? data-src`: `??` solo cae al segundo operando cuando el primero es
+ * `null`/`undefined`, y aquí `src` está presente (es el placeholder), así que
+ * la URL de verdad nunca se leía. Un enlace rojo (`mw-broken-media`) no
+ * imprime ningún `<img>`, así que ese caso sigue cayendo solo.
+ */
+function imageFrom(
+  $: cheerio.CheerioAPI,
+  scope: unknown,
+  host?: string
+): string | undefined {
+  const img = $(scope as never).find('img').first()
+  const src = img.attr('src')
+  const real = src && !src.startsWith('data:') ? src : img.attr('data-src')
+  if (!real || real.startsWith('data:')) return undefined
+  return absoluteImageUrl(real, host)
 }
 
 /** Solo estas secciones. "Permanent" y los archivos por año no interesan. */
@@ -123,6 +180,7 @@ export function parseFandomTables(html: string): ParsedEvent[] {
         ...dates,
         section,
         pageTitle: pageTitleFromCell($, cells.get(eventCol)),
+        image_url: imageFrom($, cells.get(eventCol)),
       })
     })
   })
@@ -134,7 +192,11 @@ export function parseFandomTables(html: string): ParsedEvent[] {
  * endfield.wiki.gg no usa tabla: renderiza tarjetas `.mp-event` con el nombre
  * entre corchetes y una línea de horario por región.
  */
-export function parseEndfieldCards(html: string, section: string): ParsedEvent[] {
+export function parseEndfieldCards(
+  html: string,
+  section: string,
+  host: string
+): ParsedEvent[] {
   const $ = cheerio.load(html)
   const out: ParsedEvent[] = []
 
@@ -162,7 +224,14 @@ export function parseEndfieldCards(html: string, section: string): ParsedEvent[]
     const link = $(card).find('a[title]').first()
     const pageTitle = (link.attr('title') ?? '').trim() || undefined
 
-    out.push({ title, ...dates, section, pageTitle })
+    out.push({
+      title,
+      ...dates,
+      section,
+      pageTitle,
+      // La wiki devuelve ruta relativa; sin el host la URL no vale para nada.
+      image_url: imageFrom($, card, host),
+    })
   })
 
   return out

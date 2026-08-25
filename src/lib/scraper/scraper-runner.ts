@@ -20,6 +20,7 @@ export interface ScrapeResult {
   /** Solo en seco: lo que se habria escrito, para poder revisarlo. */
   rows?: unknown[]
   eventsWithoutDescription?: number
+  eventsWithoutImage?: number
   error?: string
 }
 
@@ -52,7 +53,7 @@ async function collectEvents(gameSlug: string): Promise<ParsedEvent[]> {
         )
       }
       const { html } = await fetchMediaWiki(`${source.sourceUrl}&section=${index}`)
-      collected.push(...parseEndfieldCards(html, label))
+      collected.push(...parseEndfieldCards(html, label, source.wikiHost))
     }
     return collected
   }
@@ -145,7 +146,7 @@ export async function runScraperForGame(
   //    motivo que en el paso 4: un `in` sobre títulos con comillas no casa.
   const { data: existing } = await supabase
     .from('events')
-    .select('title, description_en, description_es, rewards')
+    .select('title, description_en, description_es, rewards, image_url')
     .eq('game_id', game.id)
 
   const previous = new Map((existing ?? []).map((row) => [row.title, row]))
@@ -160,6 +161,7 @@ export async function runScraperForGame(
     value && value.trim().length >= 30 ? value : null
 
   let missingDescription = 0
+  let missingImage = 0
   let expired = 0
 
   // Primera vuelta: resolver el inglés y decidir quién necesita traducción.
@@ -206,6 +208,14 @@ export async function runScraperForGame(
       console.warn(`[${gameSlug}] sin descripción: "${event.title}"`)
     }
 
+    // Cadena de preferencia. El primer eslabón es el banner oficial, que hoy
+    // vale siempre `undefined` — ver el comentario de `Enrichment.banner`.
+    // El último es lo guardado: una pasada sin imagen NO puede borrar una
+    // buena, igual que con las descripciones. Una wiki puede romper una
+    // imagen un día y arreglarla al siguiente.
+    const image_url = extra?.banner ?? event.image_url ?? prev?.image_url ?? null
+    if (!image_url) missingImage++
+
     // El tablón oficial da la hora exacta; la wiki solo el día.
     const start_date = extra?.start_date ?? event.start_date
     const end_date = extra?.end_date ?? event.end_date
@@ -226,6 +236,7 @@ export async function runScraperForGame(
       end_date,
       rewards: prev?.rewards ?? null,
       source_url: source.humanUrl,
+      image_url,
       is_active: live,
     }
   })
@@ -244,6 +255,7 @@ export async function runScraperForGame(
       eventsTranslated: translated.size,
       eventsExpired: expired,
       eventsWithoutDescription: missingDescription,
+      eventsWithoutImage: missingImage,
       rows,
     }
   }
@@ -299,5 +311,6 @@ export async function runScraperForGame(
     eventsExpired: expired,
     eventsTranslated: translated.size,
     eventsWithoutDescription: missingDescription,
+    eventsWithoutImage: missingImage,
   }
 }

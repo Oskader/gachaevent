@@ -61,13 +61,15 @@ for (const game of games) {
         `  SECO ${game.padEnd(10)} ${String(body.rows?.length ?? 0).padStart(3)} filas` +
           `  (${body.eventsTranslated ?? 0} traducidas ahora,` +
           ` ${body.eventsExpired ?? 0} caducadas,` +
-          ` ${body.eventsWithoutDescription ?? 0} sin descripcion)  ${secs}s`
+          ` ${body.eventsWithoutDescription ?? 0} sin descripcion,` +
+          ` ${body.eventsWithoutImage ?? 0} sin imagen)  ${secs}s`
       )
       for (const r of body.rows ?? []) {
         console.log(`
     ${r.title}`)
         console.log(`      EN: ${r.description_en ?? '(ninguna)'}`)
         console.log(`      ES: ${r.description_es ?? '(ninguna)'}`)
+        console.log(`      IMG: ${r.image_url ?? '(ninguna)'}`)
       }
       console.log()
       continue

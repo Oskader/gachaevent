@@ -51,6 +51,21 @@ export interface Enrichment {
   /** Ventana real del evento, si el anuncio la declara. */
   start_date?: string
   end_date?: string
+  /**
+   * Banner oficial del anuncio. **Hoy nadie lo rellena, a propósito.**
+   *
+   * `getAnnContent` —el mismo endpoint del que salen estas descripciones— ya
+   * devuelve el campo `banner` en cada item, así que activarlo no costará
+   * ninguna petición nueva: será leer `item.banner` en el bucle de
+   * `fetchHoyoEnrichment`. El cruce por `dedupKey` ya está resuelto y lo
+   * hereda gratis.
+   *
+   * Queda declarado para que la cadena de preferencia de `scraper-runner.ts`
+   * esté escrita de una vez y encenderlo sea rellenar un campo, no rehacerla.
+   * Lo que sí hará falta: el `remotePattern` de `sdk.hoyoverse.com`.
+   * Ver §6 del diseño.
+   */
+  banner?: string | null
 }
 
 interface AnnItem {
