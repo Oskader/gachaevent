@@ -64,6 +64,11 @@ export interface Enrichment {
    * esté escrita de una vez y encenderlo sea rellenar un campo, no rehacerla.
    * Lo que sí hará falta: el `remotePattern` de `sdk.hoyoverse.com`.
    * Ver §6 del diseño.
+   *
+   * Al rellenarlo, normaliza la cadena vacía a `null`. La cadena de
+   * preferencia de `scraper-runner.ts` usa `??`, que NO salta `''`: un
+   * anuncio con `banner: ""` machacaría en silencio la imagen buena que vino
+   * de la wiki, y la fila se quedaría sin miniatura sin dar ningún error.
    */
   banner?: string | null
 }

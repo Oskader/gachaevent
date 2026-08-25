@@ -14,11 +14,20 @@ export default function Loading() {
           <div className="space-y-6">
             {[0, 1, 2].map((i) => (
               <div key={i} className="space-y-2 border-b border-line pb-4">
-                <div className="flex justify-between gap-4">
-                  <Skeleton className="h-4 w-2/3 rounded-none" />
-                  <Skeleton className="h-4 w-16 rounded-none" />
+                <div className="flex gap-3">
+                  {/* Reserva la miniatura de 96×54: sin este hueco, al llegar
+                      el contenido real el texto salta a la derecha. */}
+                  <Skeleton className="h-[54px] w-24 shrink-0 rounded-sm" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex justify-between gap-4">
+                      <Skeleton className="h-4 w-2/3 rounded-none" />
+                      <Skeleton className="h-4 w-16 rounded-none" />
+                    </div>
+                    <Skeleton className="h-3 w-full rounded-none" />
+                  </div>
                 </div>
-                <Skeleton className="h-3 w-full rounded-none" />
+                {/* La mecha va FUERA del flex: cruza la fila entera, igual que
+                    en `event-row.tsx`. */}
                 <Skeleton className="h-[3px] w-full rounded-none" />
               </div>
             ))}
