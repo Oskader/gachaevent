@@ -47,7 +47,7 @@ const days = (iso) => (Date.parse(iso) - Date.now()) / 86_400_000
 async function main() {
   const [games, events, checklist] = await Promise.all([
     get('games?select=id,slug,name&order=name'),
-    get('events?select=game_id,title,start_date,end_date,description,is_active&limit=1000'),
+    get('events?select=game_id,title,start_date,end_date,description_en,image_url,is_active&limit=1000'),
     get('checklist_items?select=game_id,title&limit=500'),
   ])
 
@@ -59,7 +59,11 @@ async function main() {
   for (const game of games) {
     const all = events.filter((e) => e.game_id === game.id)
     const live = all.filter((e) => e.is_active && e.end_date > now)
-    const withDesc = live.filter((e) => e.description).length
+    // description_en, no description: esa segunda es la columna muerta que
+    // el scraper ya no escribe, así que contaba como buenas las filas viejas
+    // y como huecos todos los eventos nuevos.
+    const withDesc = live.filter((e) => e.description_en).length
+    const withImg = live.filter((e) => e.image_url).length
     const items = checklist.filter((c) => c.game_id === game.id).length
 
     // Duplicados: dos filas activas que normalizan a la misma clave.
@@ -79,6 +83,7 @@ async function main() {
     console.log(
       `   eventos activos ${String(live.length).padStart(3)}` +
         `   con descripción ${String(withDesc).padStart(3)}` +
+        `   con imagen ${String(withImg).padStart(3)}` +
         `   checklist ${String(items).padStart(3)}` +
         `   filas totales ${String(all.length).padStart(4)}`
     )
@@ -95,7 +100,7 @@ async function main() {
       problems++
     }
 
-    const noDesc = live.filter((e) => !e.description)
+    const noDesc = live.filter((e) => !e.description_en)
     for (const e of noDesc) {
       console.log(`   ! sin descripción: "${e.title}"`)
       problems++
