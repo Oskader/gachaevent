@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { CountdownLabel, Fuse } from '@/components/ui/countdown'
 import { pickDescription, type Locale } from '@/lib/i18n/shared'
 import type { UrgencyWords } from '@/lib/urgency'
@@ -61,41 +62,63 @@ export function EventRow({
         </div>
       )}
 
-      <div className="mb-2 flex items-start justify-between gap-4">
-        <h3 className="flex-1 text-sm font-semibold leading-snug text-foreground">
-          {event.title}
-        </h3>
-        <CountdownLabel
-          startDate={upcoming ? event.start_date : undefined}
-          endDate={event.end_date}
-          className="shrink-0"
-          words={words}
-        />
-      </div>
+      <div className="flex gap-3">
+        {event.image_url && (
+          // 96×54 = 16:9, la proporción nativa de tres de las cuatro fuentes.
+          // Endfield entrega 5.5:1 y se recorta por los lados: sigue siendo
+          // reconocible, cosa que en una miniatura cuadrada no pasaría.
+          <div className="relative h-[54px] w-24 shrink-0 overflow-hidden rounded-sm border border-line">
+            <Image
+              src={event.image_url}
+              // Decorativa: el título va justo al lado y repetirlo solo
+              // ensucia el lector de pantalla.
+              alt=""
+              fill
+              sizes="96px"
+              className="object-cover"
+            />
+          </div>
+        )}
 
-      {description && (
-        <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-dim">
-          {description}
-        </p>
-      )}
+        {/* min-w-0 para que el line-clamp de la descripción pueda encoger. */}
+        <div className="min-w-0 flex-1">
+          <div className="mb-2 flex items-start justify-between gap-4">
+            <h3 className="flex-1 text-sm font-semibold leading-snug text-foreground">
+              {event.title}
+            </h3>
+            <CountdownLabel
+              startDate={upcoming ? event.start_date : undefined}
+              endDate={event.end_date}
+              className="shrink-0"
+              words={words}
+            />
+          </div>
 
-      {items.length > 0 && (
-        <ul className="mb-3 flex flex-wrap gap-x-3 gap-y-1">
-          {items.slice(0, 4).map((reward, i) => (
-            <li
-              key={`${reward}-${i}`}
-              className="tabular text-[11px] text-dim before:mr-1.5 before:text-[var(--text-faint)] before:content-['+']"
-            >
-              {reward}
-            </li>
-          ))}
-          {items.length > 4 && (
-            <li className="tabular text-[11px] text-[var(--text-faint)]">
-              {andMore.replace('{n}', String(items.length - 4))}
-            </li>
+          {description && (
+            <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-dim">
+              {description}
+            </p>
           )}
-        </ul>
-      )}
+
+          {items.length > 0 && (
+            <ul className="mb-3 flex flex-wrap gap-x-3 gap-y-1">
+              {items.slice(0, 4).map((reward, i) => (
+                <li
+                  key={`${reward}-${i}`}
+                  className="tabular text-[11px] text-dim before:mr-1.5 before:text-[var(--text-faint)] before:content-['+']"
+                >
+                  {reward}
+                </li>
+              ))}
+              {items.length > 4 && (
+                <li className="tabular text-[11px] text-[var(--text-faint)]">
+                  {andMore.replace('{n}', String(items.length - 4))}
+                </li>
+              )}
+            </ul>
+          )}
+        </div>
+      </div>
 
       <Fuse startDate={event.start_date} endDate={event.end_date} />
     </article>
