@@ -79,11 +79,25 @@ guardada es inservible.
 
 Dos detalles que valen por sí solos:
 
-- **El `src` sirve tal cual.** Comprobado el 2026-08-25 en HSR y WuWa: `data-src` no
-  aparece en ninguna imagen. El placeholder de carga diferida de Fandom es cosa de la
-  página web renderizada; `action=parse` devuelve el `src` real. Leer `data-src` primero
-  como respaldo cuesta una línea y no molesta, pero **no es necesario** — no hay que
-  construir nada alrededor de esa suposición.
+- **Hay que leer `src` Y `data-src`, en ese orden y con cuidado.** Fandom sirve la tabla
+  con carga diferida a partir de la cuarta fila: esas imágenes llevan `class="lazyload"`,
+  un `src="data:image/gif;base64,…"` de relleno y la URL real en `data-src`. En la página
+  de eventos de HSR son **25 de 28**. Solo las primeras filas llegan con `src` real.
+
+  El matiz que cuesta un bug: `img.attr('src') ?? img.attr('data-src')` **no vale**. `??`
+  solo cae al segundo operando con `null`/`undefined`, y el placeholder `data:` es una
+  cadena con valor, así que nunca se llega a `data-src` y la fila se pierde entera. Hay
+  que preferir el `src` **solo si no es un `data:`**:
+
+  ```ts
+  const src = img.attr('src')
+  const real = src && !src.startsWith('data:') ? src : img.attr('data-src')
+  ```
+
+  Este párrafo estuvo mal escrito hasta el 2026-08-25: afirmaba que `data-src` no aparecía
+  nunca. Salía de una sonda que solo miraba las tres primeras imágenes de la página —
+  justo las tres únicas que se cargan en caliente. Con la versión ingenua, la cobertura
+  caía de 38/40 a 18/40.
 - `mw-broken-media` **no emite `<img>`**, así que un banner inexistente cae solo en
   `undefined`. No hace falta filtro para las dos filas de Zenless.
 
