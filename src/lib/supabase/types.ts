@@ -70,6 +70,7 @@ export type Database = {
           end_date: string
           game_id: string
           id: string
+          image_url: string | null
           is_active: boolean
           rewards: Json | null
           source_url: string | null
@@ -85,6 +86,7 @@ export type Database = {
           end_date: string
           game_id: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           rewards?: Json | null
           source_url?: string | null
@@ -100,6 +102,7 @@ export type Database = {
           end_date?: string
           game_id?: string
           id?: string
+          image_url?: string | null
           is_active?: boolean
           rewards?: Json | null
           source_url?: string | null
