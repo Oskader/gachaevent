@@ -46,3 +46,6 @@ test_supabase_auth.mjs
 next-env.d.ts
 
 .vercel
+
+# workspace de subagent-driven-development (ledger, briefs, paquetes de review)
+.superpowers/

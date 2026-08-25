@@ -12,3 +12,4 @@ test_supabase_auth.mjs
 
 # Guía de configuración; no hace falta en el build.
 GUIA_OAUTH_GOOGLE.md
+.superpowers/
