@@ -56,27 +56,41 @@ function pageTitleFromCell($: cheerio.CheerioAPI, td: unknown): string | undefin
 }
 
 /**
- * Ancho al que se piden las miniaturas.
+ * Techo de resolución que se le pide a la wiki.
  *
- * La fila las dibuja a 96 CSS px, que en pantalla de densidad doble son 192
- * reales. 480 deja margen sin pedir el original entero.
+ * No es lo que descarga nadie: `next/image` busca este original en el servidor
+ * y sirve al ancho que pida el navegador. Así que esto solo fija cuántos
+ * píxeles hay DISPONIBLES, y quedarse corto no se puede compensar después.
+ *
+ * 960 y no 480 por Endfield. Sus banners son 5.5:1 y la miniatura los recorta
+ * a 16:9, así que quien manda es el alto: a 480 de ancho el fichero tiene 87 px
+ * de alto, y una caja de 90 px a doble densidad pide 180. Ampliaba 2x y se veía
+ * borroso. A 960 el original trae 175 y llega justo. Las dos wikis lo sirven.
  */
-const THUMB_WIDTH = 480
+const THUMB_WIDTH = 960
+
+/** El ancho pedido, en las dos sintaxis de miniatura que hay entre las cuatro wikis. */
+function widenThumb(url: string): string {
+  return url
+    .replace(/\/scale-to-width-down\/\d+/, `/scale-to-width-down/${THUMB_WIDTH}`)
+    .replace(/\/\d+px-/, `/${THUMB_WIDTH}px-`)
+}
 
 /**
  * URL absoluta y a resolución utilizable.
  *
- * Fandom sirve por `scale-to-width-down/<n>` y Wuthering entrega 200 px, que
- * se ve blando al doble de densidad; por eso se reescribe el ancho.
+ * Fandom sirve por `scale-to-width-down/<n>`; Endfield por
+ * `/images/thumb/<f>/<n>px-<f>`, y además la devuelve relativa, así que
+ * necesita el host delante o la URL guardada es inservible.
  *
- * Endfield NO usa ese formato —su ruta es `/images/thumb/<f>/480px-<f>`, ya a
- * 480— pero SÍ la devuelve relativa, así que lo único que necesita es el host
- * delante. Sin eso la URL guardada es inservible.
+ * El reescalado va DESPUÉS de absolutizar y en las tres ramas a propósito: la
+ * de `//` se lo saltaba, y aunque hoy no la use ninguna wiki, era una fuente
+ * silenciosa de miniaturas al ancho de origen.
  */
 function absoluteImageUrl(src: string, host?: string): string | undefined {
-  if (src.startsWith('//')) return `https:${src}`
-  if (src.startsWith('/')) return host ? `https://${host}${src}` : undefined
-  return src.replace(/\/scale-to-width-down\/\d+/, `/scale-to-width-down/${THUMB_WIDTH}`)
+  if (src.startsWith('//')) return widenThumb(`https:${src}`)
+  if (src.startsWith('/')) return host ? widenThumb(`https://${host}${src}`) : undefined
+  return widenThumb(src)
 }
 
 /**

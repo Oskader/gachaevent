@@ -15,9 +15,10 @@ export default function Loading() {
             {[0, 1, 2].map((i) => (
               <div key={i} className="space-y-2 border-b border-line pb-4">
                 <div className="flex gap-3">
-                  {/* Reserva la miniatura de 96×54: sin este hueco, al llegar
-                      el contenido real el texto salta a la derecha. */}
-                  <Skeleton className="h-[54px] w-24 shrink-0 rounded-sm" />
+                  {/* Reserva la miniatura: sin este hueco, al llegar el
+                      contenido real el texto salta a la derecha. Las medidas
+                      siguen a `event-row.tsx` — si cambian allí, cambian aquí. */}
+                  <Skeleton className="h-[72px] w-32 shrink-0 rounded-sm sm:h-[90px] sm:w-40" />
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex justify-between gap-4">
                       <Skeleton className="h-4 w-2/3 rounded-none" />

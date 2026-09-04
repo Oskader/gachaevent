@@ -25,6 +25,31 @@ interface Props {
 }
 
 /**
+ * Fuentes cuyo banner es mucho más apaisado que la miniatura.
+ *
+ * Importa por dos cosas a la vez, y las dos se ven:
+ *
+ * - `sizes`. Declara cuántos píxeles hace falta y el navegador elige candidato
+ *   POR ANCHURA. Pero con `object-cover` y un origen más apaisado que la caja,
+ *   quien manda es el ALTO: Endfield sirve 5.5:1, así que cubrir 90 px de alto
+ *   exige ~495 px de origen, no los 160 que mide la caja. Declarar 160 hacía
+ *   que el navegador se trajera un fichero de 70 px de alto y lo ampliara 2x —
+ *   borroso, y sin ningún error por ningún lado.
+ * - `object-position`. El recorte centrado de un banner 5.5:1 cae justo en
+ *   mitad del rótulo y parte las palabras ("Echo", "THE REA"). Desde la
+ *   izquierda entra el arte y el título empieza donde debe.
+ *
+ * Ninguna de las dos se puede poner para todas: un `sizes` generoso global
+ * hace que las 16:9 bajen 73 KB donde les bastan 20, y `object-position` en una
+ * 16:9 dentro de una caja 16:9 no recorta nada, así que no haría nada.
+ *
+ * El host es el único dato disponible —no guardamos las dimensiones— y es
+ * exacto: comprobado el 2026-08-26, de las cuatro wikis solo endfield.wiki.gg
+ * entrega sub-banners apaisados. Las demás son 16:9 o cuadradas.
+ */
+const WIDE_BANNER_HOST = 'endfield.wiki.gg'
+
+/**
  * Una fila de evento.
  *
  * Jerarquía deliberada: la cuenta atrás pesa lo mismo que el título,
@@ -42,6 +67,7 @@ export function EventRow({
 }: Props) {
   const rewards = event.rewards as { items?: string[] } | null
   const items = rewards?.items ?? []
+  const wideBanner = event.image_url?.includes(WIDE_BANNER_HOST) ?? false
 
   // Cae al otro idioma si falta la traducción: mejor inglés que una tarjeta
   // muda mientras la cola de traducción se vacía.
@@ -64,18 +90,25 @@ export function EventRow({
 
       <div className="flex gap-3">
         {event.image_url && (
-          // 96×54 = 16:9, la proporción nativa de tres de las cuatro fuentes.
-          // Endfield entrega 5.5:1 y se recorta por los lados: sigue siendo
-          // reconocible, cosa que en una miniatura cuadrada no pasaría.
-          <div className="relative h-[54px] w-24 shrink-0 overflow-hidden rounded-sm border border-line">
+          // 16:9, la proporción nativa de tres de las cuatro fuentes. La
+          // cuarta (Endfield, 5.5:1) se recorta por los lados; de dónde y con
+          // cuántos píxeles, en WIDE_BANNER_HOST.
+          <div className="relative h-[72px] w-32 shrink-0 overflow-hidden rounded-sm border border-line sm:h-[90px] sm:w-40">
             <Image
               src={event.image_url}
               // Decorativa: el título va justo al lado y repetirlo solo
               // ensucia el lector de pantalla.
               alt=""
               fill
-              sizes="96px"
-              className="object-cover"
+              // Ver WIDE_BANNER_HOST: para el banner apaisado esto NO es el
+              // ancho de la caja sino alto × 5.5, que es lo que de verdad
+              // hace falta para cubrirla.
+              sizes={
+                wideBanner
+                  ? '(min-width: 640px) 500px, 400px'
+                  : '(min-width: 640px) 160px, 128px'
+              }
+              className={`object-cover ${wideBanner ? 'object-left' : ''}`}
             />
           </div>
         )}
