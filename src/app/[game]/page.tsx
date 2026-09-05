@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/page-header'
 import { EventRow } from '@/components/event-row'
 import { ChecklistSection } from './components/ChecklistSection'
 import { getI18n } from '@/lib/i18n'
+import { isPausedGame } from '@/lib/game-status'
 import { phaseAt, requestNow } from '@/lib/urgency'
 import type { Database } from '@/lib/supabase/types'
 
@@ -34,7 +35,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: game.name,
-    description: t.game.metaDescription.replace('{game}', game.name),
+    description: isPausedGame(game.slug)
+      ? `${t.paused.comingSoon}. ${t.paused.note}`
+      : t.game.metaDescription.replace('{game}', game.name),
   }
 }
 
@@ -46,6 +49,25 @@ export default async function GamePage({ params }: Props) {
 
   const game = await getGame(gameSlug)
   if (!game) notFound()
+
+  // Pausado (game-status.ts): placeholder con la identidad del juego — nombre
+  // y stripe de color — y nada más. Nunca notFound(): la ruta sigue válida.
+  if (isPausedGame(game.slug)) {
+    return (
+      <main className="mx-auto max-w-lg px-4 pb-10">
+        <PageHeader
+          title={game.name}
+          accentColor={game.color_accent}
+          meta={t.paused.comingSoon}
+        />
+
+        <div className="border border-line bg-panel px-5 py-8 text-center">
+          <p className="eyebrow mb-3">{t.paused.comingSoon}</p>
+          <p className="text-sm text-dim">{t.paused.note}</p>
+        </div>
+      </main>
+    )
+  }
 
   const [{ data: events }, { data: checklistItems }] = await Promise.all([
     supabase

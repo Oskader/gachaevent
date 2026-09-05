@@ -5,6 +5,7 @@ import { EventRow } from '@/components/event-row'
 import { PageHeader } from '@/components/page-header'
 import { countdownAt, phaseAt, requestNow } from '@/lib/urgency'
 import { getI18n, type Dictionary, type Locale } from '@/lib/i18n'
+import { PAUSED_GAMES, isPausedGame } from '@/lib/game-status'
 import type { Database } from '@/lib/supabase/types'
 
 export const metadata: Metadata = { title: 'Hoy' }
@@ -21,16 +22,29 @@ export default async function HoyPage() {
   const supabase = await createClient()
   const now = requestNow()
 
-  const { data } = await supabase
+  // Los juegos pausados (game-status.ts) siguen teniendo filas activas en la
+  // BD a propósito — la pausa no toca datos — así que se excluyen en la propia
+  // consulta, para que no consuman el limit(). El filtro posterior en memoria
+  // es cinturón y tirantes: si el filtro de PostgREST fallara en silencio,
+  // aquí no se cuela ninguno.
+  const base = supabase
     .from('events')
     .select('*, games!inner(slug, name, color_accent)')
     .eq('is_active', true)
     .gte('end_date', new Date(now).toISOString())
     .order('end_date', { ascending: true })
     .limit(40)
-    .returns<EventWithGame[]>()
 
-  const rows = data ?? []
+  // Los slugs son del enum game_slug: sin comillas ni comas, el `in` de
+  // PostgREST es seguro (el caso peligroso documentado eran títulos con
+  // comillas dobles, no slugs).
+  const query = PAUSED_GAMES.length
+    ? base.not('games.slug', 'in', `(${PAUSED_GAMES.join(',')})`)
+    : base
+
+  const { data } = await query.returns<EventWithGame[]>()
+
+  const rows = (data ?? []).filter((e) => !isPausedGame(e.games?.slug ?? ''))
 
   // Primer corte: lo que ya está en marcha contra lo que solo está anunciado.
   // Las wikis listan las dos cosas y mezclarlas confunde de dos maneras — un

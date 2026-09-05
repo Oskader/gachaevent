@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { PageHeader } from '@/components/page-header'
 import { getI18n } from '@/lib/i18n'
+import { isPausedGame } from '@/lib/game-status'
 import { countdownAt, phaseAt, requestNow, urgencyColor } from '@/lib/urgency'
 
 export const metadata: Metadata = { title: 'Juegos' }
@@ -34,7 +35,13 @@ export default async function JuegosPage() {
     string,
     { count: number; upcoming: number; soonest: string | null }
   >()
+  // Los pausados (game-status.ts) no participan en los resúmenes: su fila se
+  // sigue mostrando, pero como «Próximamente», sin cifras ni cuenta atrás.
+  const pausedIds = new Set(
+    (games ?? []).filter((g) => isPausedGame(g.slug)).map((g) => g.id)
+  )
   for (const event of events ?? []) {
+    if (pausedIds.has(event.game_id)) continue
     const entry =
       summary.get(event.game_id) ?? { count: 0, upcoming: 0, soonest: null }
 
@@ -57,6 +64,7 @@ export default async function JuegosPage() {
         {games?.map((game) => {
           const stats = summary.get(game.id)
           const cd = stats?.soonest ? countdownAt(stats.soonest, now, t.urgency) : null
+          const paused = isPausedGame(game.slug)
 
           return (
             <li key={game.id} className="border-b border-line">
@@ -75,10 +83,12 @@ export default async function JuegosPage() {
                     {game.name}
                   </p>
                   <p className="tabular mt-0.5 text-[11px] text-dim">
-                    {stats?.count
-                      ? `${stats.count} ${stats.count === 1 ? t.hoy.activeEvent : t.hoy.activeEvents}`
-                      : t.juegos.noActiveEvents}
-                    {stats?.upcoming
+                    {paused
+                      ? t.paused.comingSoon
+                      : stats?.count
+                        ? `${stats.count} ${stats.count === 1 ? t.hoy.activeEvent : t.hoy.activeEvents}`
+                        : t.juegos.noActiveEvents}
+                    {!paused && stats?.upcoming
                       ? ` · ${(stats.upcoming === 1
                           ? t.juegos.upcomingCountOne
                           : t.juegos.upcomingCount
@@ -87,7 +97,7 @@ export default async function JuegosPage() {
                   </p>
                 </div>
 
-                {cd && (
+                {!paused && cd && (
                   <span
                     className="tabular shrink-0 text-sm font-medium"
                     style={{ color: urgencyColor(cd.level) }}

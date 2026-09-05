@@ -81,6 +81,12 @@ export const en: Dictionary = {
     },
   },
 
+  // Games on pause (game-status.ts): placeholder with the game's identity.
+  paused: {
+    comingSoon: 'Coming soon',
+    note: 'Event tracking for this game is not available yet.',
+  },
+
   event: {
     andMore: 'and {n} more',
   },

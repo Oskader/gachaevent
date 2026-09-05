@@ -27,6 +27,13 @@ export function createCronScraper(gameSlug: string) {
     const dryRun = req.nextUrl.searchParams.get('dryRun') === '1'
     const result = await runScraperForGame(gameSlug, { dryRun })
 
+    // Juego pausado (game-status.ts): 200 explícito para que Vercel no cuente
+    // el disparo del cron como fallo.
+    if (result.paused) {
+      console.log(`[${gameSlug}] pausado — no se raspa ni se escribe`)
+      return NextResponse.json(result, { status: 200 })
+    }
+
     if (!result.success) {
       console.error(`[${gameSlug}] scrape failed: ${result.error}`)
     } else {

@@ -83,6 +83,12 @@ export const es = {
     },
   },
 
+  // Juegos en pausa (game-status.ts): placeholder con identidad del juego.
+  paused: {
+    comingSoon: 'Próximamente',
+    note: 'El seguimiento de eventos de este juego todavía no está disponible.',
+  },
+
   event: {
     andMore: 'y {n} más',
   },

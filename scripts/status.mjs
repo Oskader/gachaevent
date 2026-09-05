@@ -44,6 +44,11 @@ const key = (t) =>
 
 const days = (iso) => (Date.parse(iso) - Date.now()) / 86_400_000
 
+// Espejo de PAUSED_GAMES en src/lib/game-status.ts (este script no puede
+// importar TypeScript): mantenlos en sync. Un juego pausado no recibe scraper,
+// así que sus alarmas de datos se silencian abajo.
+const PAUSED = new Set(['wuthering-waves', 'zenless-zone-zero', 'arknights-endfield'])
+
 async function main() {
   const [games, events, checklist] = await Promise.all([
     get('games?select=id,slug,name&order=name'),
@@ -79,6 +84,8 @@ async function main() {
       .map((e) => days(e.end_date))
       .sort((a, b) => a - b)[0]
 
+    const paused = PAUSED.has(game.slug)
+
     console.log(`${game.name}`)
     console.log(
       `   eventos activos ${String(live.length).padStart(3)}` +
@@ -88,7 +95,9 @@ async function main() {
         `   filas totales ${String(all.length).padStart(4)}`
     )
 
-    if (live.length === 0) {
+    if (paused) {
+      console.log('   · PAUSED — scraper detenido y UI en «Próximamente» (game-status.ts)')
+    } else if (live.length === 0) {
       console.log('   ! sin eventos activos — revisa el scraper o la wiki de origen')
       problems++
     } else {
@@ -100,15 +109,18 @@ async function main() {
       problems++
     }
 
-    const noDesc = live.filter((e) => !e.description_en)
-    for (const e of noDesc) {
-      console.log(`   ! sin descripción: "${e.title}"`)
-      problems++
-    }
+    // Los datos de un pausado envejecen a propósito: no son cosas que mirar.
+    if (!paused) {
+      const noDesc = live.filter((e) => !e.description_en)
+      for (const e of noDesc) {
+        console.log(`   ! sin descripción: "${e.title}"`)
+        problems++
+      }
 
-    for (const [a, b] of dupes) {
-      console.log(`   ! posible duplicado: "${a}"  vs  "${b}"`)
-      problems++
+      for (const [a, b] of dupes) {
+        console.log(`   ! posible duplicado: "${a}"  vs  "${b}"`)
+        problems++
+      }
     }
 
     console.log()

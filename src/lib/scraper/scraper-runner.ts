@@ -7,6 +7,7 @@ import { fetchHoyoEnrichment } from './hoyo-announcements'
 import { fetchDescriptions } from './descriptions'
 import { translateToSpanish } from './translate'
 import { SOURCES } from './sources'
+import { isPausedGame } from '@/lib/game-status'
 
 export interface ScrapeResult {
   success: boolean
@@ -22,6 +23,8 @@ export interface ScrapeResult {
   eventsWithoutDescription?: number
   eventsWithoutImage?: number
   error?: string
+  /** El juego está en PAUSED_GAMES: la pasada no se ejecuta en absoluto. */
+  paused?: boolean
 }
 
 function getServiceRoleClient() {
@@ -66,6 +69,12 @@ export async function runScraperForGame(
   gameSlug: string,
   options: { dryRun?: boolean } = {}
 ): Promise<ScrapeResult> {
+  // Pausa global (game-status.ts): ni fetch ni escritura, tampoco en seco.
+  // Pausa es pausa — no hay override para forzar un scrape manual.
+  if (isPausedGame(gameSlug)) {
+    return { success: true, paused: true, eventsUpserted: 0 }
+  }
+
   const source = SOURCES[gameSlug]
   if (!source) {
     return { success: false, eventsUpserted: 0, error: `Unknown game: ${gameSlug}` }
