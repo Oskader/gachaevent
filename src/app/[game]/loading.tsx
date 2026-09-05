@@ -18,10 +18,10 @@ export default function Loading() {
                   {/* Reserva la miniatura: sin este hueco, al llegar el
                       contenido real el texto salta a la derecha. Las medidas
                       siguen a `event-row.tsx` — si cambian allí, cambian aquí. */}
-                  <Skeleton className="h-[72px] w-32 shrink-0 rounded-sm sm:h-[90px] sm:w-40" />
+                  <Skeleton className="h-[86px] w-[152px] shrink-0 rounded-sm sm:h-[117px] sm:w-[208px]" />
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex justify-between gap-4">
-                      <Skeleton className="h-4 w-2/3 rounded-none" />
+                      <Skeleton className="h-5 w-2/3 rounded-none" />
                       <Skeleton className="h-4 w-16 rounded-none" />
                     </div>
                     <Skeleton className="h-3 w-full rounded-none" />

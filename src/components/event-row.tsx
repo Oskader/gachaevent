@@ -31,8 +31,8 @@ interface Props {
  *
  * - `sizes`. Declara cuántos píxeles hace falta y el navegador elige candidato
  *   POR ANCHURA. Pero con `object-cover` y un origen más apaisado que la caja,
- *   quien manda es el ALTO: Endfield sirve 5.5:1, así que cubrir 90 px de alto
- *   exige ~495 px de origen, no los 160 que mide la caja. Declarar 160 hacía
+ *   quien manda es el ALTO: Endfield sirve 5.5:1, así que cubrir 117 px de alto
+ *   exige ~645 px de origen, no los 208 que mide la caja. Declarar la caja hacía
  *   que el navegador se trajera un fichero de 70 px de alto y lo ampliara 2x —
  *   borroso, y sin ningún error por ningún lado.
  * - `object-position`. El recorte centrado de un banner 5.5:1 cae justo en
@@ -93,7 +93,7 @@ export function EventRow({
           // 16:9, la proporción nativa de tres de las cuatro fuentes. La
           // cuarta (Endfield, 5.5:1) se recorta por los lados; de dónde y con
           // cuántos píxeles, en WIDE_BANNER_HOST.
-          <div className="relative h-[72px] w-32 shrink-0 overflow-hidden rounded-sm border border-line sm:h-[90px] sm:w-40">
+          <div className="relative h-[86px] w-[152px] shrink-0 overflow-hidden rounded-sm border border-line sm:h-[117px] sm:w-[208px]">
             <Image
               src={event.image_url}
               // Decorativa: el título va justo al lado y repetirlo solo
@@ -105,10 +105,17 @@ export function EventRow({
               // hace falta para cubrirla.
               sizes={
                 wideBanner
-                  ? '(min-width: 640px) 500px, 400px'
-                  : '(min-width: 640px) 160px, 128px'
+                  ? '(min-width: 640px) 650px, 480px'
+                  : '(min-width: 640px) 208px, 152px'
               }
               className={`object-cover ${wideBanner ? 'object-left' : ''}`}
+            />
+            {/* Identidad del juego: stripe en el borde izquierdo de la
+                miniatura, presente también en la página del propio juego. */}
+            <span
+              className="absolute inset-y-0 left-0 z-10 w-[3px]"
+              style={{ backgroundColor: accentColor }}
+              aria-hidden="true"
             />
           </div>
         )}
@@ -116,7 +123,7 @@ export function EventRow({
         {/* min-w-0 para que el line-clamp de la descripción pueda encoger. */}
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex items-start justify-between gap-4">
-            <h3 className="flex-1 text-sm font-semibold leading-snug text-foreground">
+            <h3 className="line-clamp-2 flex-1 text-base font-semibold leading-snug text-foreground">
               {event.title}
             </h3>
             <CountdownLabel
@@ -128,7 +135,7 @@ export function EventRow({
           </div>
 
           {description && (
-            <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-dim">
+            <p className="mb-3 line-clamp-1 text-xs leading-relaxed text-dim">
               {description}
             </p>
           )}
