@@ -100,12 +100,10 @@ export function EventRow({
               // ensucia el lector de pantalla.
               alt=""
               fill
-              // unoptimized: salta el re-encode de next/image y el navegador
-              // recibe el webp 93 KB del wikia tal cual. Nitidez maxima pero
-              // ~6x mas bytes: 10 filas en /hoy ~= 1 MB de imagenes. Aplicable
-              // solo a la miniatura porque el resto de imagenes (iconos de
-              // juego) siguen pasando por next/image.
-              unoptimized
+              // q=90 (whitelist en next.config.ts). El default de Next 16 es 75
+              // y se nota en los rotulos de texto del banner; subir a 90 reduce
+              // la cuantizacion del croma 4:2:0 sin disparar el tamano mucho.
+              quality={90}
               // Ver WIDE_BANNER_HOST: para el banner apaisado esto NO es el
               // ancho de la caja sino alto × 5.5, que es lo que de verdad
               // hace falta para cubrirla.
