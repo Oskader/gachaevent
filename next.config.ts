@@ -22,6 +22,15 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.nocookie.net" },
       { protocol: "https", hostname: "**.supabase.co" },
     ],
+    // Whitelist de qualities: Next 16 degrada silenciosamente cualquier prop
+    // `quality` fuera de esta lista al primer valor (default: 75). La miniatura
+    // de evento pide 90 explicita; sin esto la prop se ignora. Verificado en
+    // node_modules/next/dist/docs/01-app/03-api-reference/04-components/image.md.
+    qualities: [75, 90],
+    // Orden de preferencia del formato de salida. AVIF retiene mejor el texto y
+    // el detalle fino de los banners de HSR al mismo bitrate que webp; si el
+    // navegador no soporta AVIF, cae a webp automaticamente.
+    formats: ["image/avif", "image/webp"],
   },
 };
 

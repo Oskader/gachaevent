@@ -100,6 +100,10 @@ export function EventRow({
               // ensucia el lector de pantalla.
               alt=""
               fill
+              // q=90 (whitelist en next.config.ts). El default de Next 16 es 75
+              // y se nota en los rotulos de texto del banner; subir a 90 reduce
+              // la cuantizacion del croma 4:2:0 sin disparar el tamano mucho.
+              quality={90}
               // Ver WIDE_BANNER_HOST: para el banner apaisado esto NO es el
               // ancho de la caja sino alto × 5.5, que es lo que de verdad
               // hace falta para cubrirla.
